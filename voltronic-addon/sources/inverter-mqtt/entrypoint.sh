@@ -52,5 +52,8 @@ echo "Iniciando procesos en $PWD..."
 watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
+echo "Haciendo prueba de lectura manual..."
+/opt/inverter-cli/inverter_poller -d
+
 # Bucle principal de envío de datos
 watch -n 30 /bin/bash ./mqtt-push.sh
