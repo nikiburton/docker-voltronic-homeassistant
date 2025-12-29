@@ -1,4 +1,4 @@
-# A Docker based Home Assistant interface for MPP/Voltronic Solar Inverters 
+# A Dockee based addon for Home Assistant interface for MPP/Voltronic Solar Inverters 
 
 **Docker Hub:** [`bushrangers/ha-voltronic-mqtt:latest`](https://hub.docker.com/r/bushrangers/ha-voltronic-mqtt/)
 
