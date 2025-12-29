@@ -9,6 +9,7 @@ arch:
   - armv7
 init: false
 full_access: true
+apparmor: false #Esto elimina el perfil de seguridad que impide el chmod
 privileged:
   - SYS_RAWIO
   - DAC_READ_SEARCH
