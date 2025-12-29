@@ -17,14 +17,14 @@ JSON_FILE="/etc/inverter/mqtt.json"
 SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
-# --- NUEVO: CONFIGURACIÓN DE PERMISOS PARA HID ---
-echo "Configurando permisos para dispositivo HID (0665:5161)..."
-# Dar permisos a los buses USB
-chmod -R 777 /dev/bus/usb/
-# Crear y dar permisos al nodo hidraw si el sistema lo permite
-mknod /dev/hidraw0 c 242 0 2>/dev/null
-chmod 666 /dev/hidraw0 2>/dev/null
-# -------------------------------------------------
+# --- CONFIGURACIÓN DE PERMISOS PARA HID ---
+echo "Configurando acceso al dispositivo HID..."
+# Intentar dar permiso al nodo hidraw específico
+chmod 666 /dev/hidraw* 2>/dev/null
+# Si el binario usa libusb, a veces necesita que el dispositivo del bus sea escribible
+chmod 666 /dev/bus/usb/003/002 2>/dev/null
+echo "Permisos aplicados."
+# -------------------------------------------
 
 # 3. Parchear el JSON
 if [ -f "$JSON_FILE" ]; then
