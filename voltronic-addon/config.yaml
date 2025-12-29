@@ -11,7 +11,9 @@ init: false
 full_access: true
 privileged:
   - SYS_RAWIO
+  - DAC_READ_SEARCH
 devices:
+  - /dev/bus/usb:/dev/bus/usb
   - /dev/bus/usb:/dev/bus/usb
   - /dev/ttyUSB0:/dev/ttyUSB0
   - /dev/ttyUSB1:/dev/ttyUSB1
