@@ -1,17 +1,14 @@
 FROM ghcr.io/home-assistant/aarch64-base:latest
 
-# 1. Instalamos dependencias para compilar y ejecutar
+# 1. Instalamos dependencias correctas para Alpine
 RUN apk add --no-cache \
-    build-essential \
+    build-base \
     cmake \
     git \
     mosquitto-clients \
-    bash \
-    g++ \
-    make
+    bash
 
 # 2. Copiamos los archivos DIRECTAMENTE en /opt/
-# Esto hará que /opt/inverter-cli y /opt/inverter-mqtt existan
 COPY sources/ /opt/
 COPY config/ /etc/inverter/
 
