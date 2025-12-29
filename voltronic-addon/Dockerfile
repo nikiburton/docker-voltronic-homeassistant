@@ -35,4 +35,4 @@ HEALTHCHECK \
   CMD /opt/healthcheck
 
 WORKDIR /opt
-ENTRYPOINT ["/bin/bash", "/opt/inverter-mqtt/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/opt/sources/inverter-mqtt/entrypoint.sh"]
