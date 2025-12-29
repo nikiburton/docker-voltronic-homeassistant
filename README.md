@@ -47,34 +47,15 @@ _Example #2: Grafana summary allowing more detailed analysis of data collected, 
 It's pretty straightforward, just install the repository and then the Addon
 configure the IP of HA and MQTT user and password.
 
+# Configure your MQTT server's IP/Host Name, Port, Credentials, HA topic, and name of the Inverter that you want displayed in Home Assistant...
+# If your MQTT server does not need a username/password just leave these values empty.
+
 
 pendiente de revisar...
 
 
 
 
-
-
-```bash
-# Clone down sources on the host you want to monitor...
-git clone https://github.com/ned-kelly/docker-voltronic-homeassistant.git /opt/ha-inverter-mqtt-agent
-cd /opt/ha-inverter-mqtt-agent
-
-# Configure the 'device=' directive (in inverter.conf) to suit for RS232 or USB.. 
-vi config/inverter.conf
-
-# Configure your MQTT server's IP/Host Name, Port, Credentials, HA topic, and name of the Inverter that you want displayed in Home Assistant...
-# If your MQTT server does not need a username/password just leave these values empty.
-
-vi config/mqtt.json
-```
-
-Then, plug in your Serial or USB cable to the Inverter & stand up the container:
-
-```bash
-docker-compose up -d
-
-```
 
 _**Note:**_
 
