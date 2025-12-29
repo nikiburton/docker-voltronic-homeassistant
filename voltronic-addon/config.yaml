@@ -15,7 +15,7 @@ privileged:
   - DAC_READ_SEARCH
 devices:
   - /dev/bus/usb:/dev/bus/usb
-  - /dev/bus/usb:/dev/bus/usb
+  - /dev/hidraw0:/dev/hidraw0
   - /dev/ttyUSB0:/dev/ttyUSB0
   - /dev/ttyUSB1:/dev/ttyUSB1
   - /dev/ttyACM0:/dev/ttyACM0
