@@ -9,7 +9,10 @@ arch:
   - armv7
 init: false
 full_access: true
+privileged:
+  - SYS_RAWIO
 devices:
+  - /dev/bus/usb:/dev/bus/usb
   - /dev/ttyUSB0:/dev/ttyUSB0
   - /dev/ttyUSB1:/dev/ttyUSB1
   - /dev/ttyACM0:/dev/ttyACM0
