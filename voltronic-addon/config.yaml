@@ -8,6 +8,11 @@ arch:
   - armhf
   - armv7
 init: false
+full_access: true
+devices:
+  - /dev/ttyUSB0:/dev/ttyUSB0
+  - /dev/ttyUSB1:/dev/ttyUSB1
+  - /dev/ttyACM0:/dev/ttyACM0
 map:
   - "config:/etc/inverter:rw"
 options:
