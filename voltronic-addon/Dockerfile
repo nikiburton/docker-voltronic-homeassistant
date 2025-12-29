@@ -21,18 +21,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         mosquitto-clients \
     && rm -rf /var/lib/apt/lists/*
 
-ADD sources/ /opt/
+ADD sources/ /opt/sources/
 ADD config/ /etc/inverter/
 
-RUN cd /opt/inverter-cli && \
-    mkdir bin && cmake . && make && mv inverter_poller bin/
+# Corregimos la ruta de compilación (añadimos sources/)
+RUN cd /opt/sources/inverter-cli && \
+    mkdir -p bin && cmake . && make && mv inverter_poller bin/
+
+# Corregimos la ruta de compilación del segundo binario (que falta en tu archivo)
+RUN cd /opt/sources/inverter-mqtt && \
+    cmake . && make
 
 HEALTHCHECK \
     --interval=30s \
     --timeout=10s \
     --start-period=1m \
     --retries=3 \
-  CMD /opt/healthcheck
+  CMD /opt/sources/healthcheck
 
-WORKDIR /opt
+WORKDIR /opt/sources
 ENTRYPOINT ["/bin/bash", "/opt/sources/inverter-mqtt/entrypoint.sh"]
