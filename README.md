@@ -1,4 +1,4 @@
-# A Dockee based addon for Home Assistant interface for MPP/Voltronic Solar Inverters 
+# A Docker based addon for Home Assistant interface for MPP/Voltronic Solar Inverters 
 
 **Docker Hub:** [`bushrangers/ha-voltronic-mqtt:latest`](https://hub.docker.com/r/bushrangers/ha-voltronic-mqtt/)
 
@@ -27,7 +27,7 @@ By remotely setting values via MQTT you can implement many more complex forms of
 
 --------------------------------------------------
 
-The program is designed to be run in a Docker Container, and can be deployed on a lightweight SBC next to your Inverter (i.e. an Orange Pi Zero running Arabian), and read data via the RS232 or USB ports on the back of the Inverter.
+The program is addapted to be run in a Home Assistant, and can be deployed on a lightweight SBC next to your Inverter (i.e. a Raspberry Pi running HAOS), and read data via the RS232 or USB ports on the back of the Inverter.
 
 ![Example Lovelace Dashboard](images/lovelace-dashboard.jpg "Example Lovelace Dashboard")
 _Example #1: My "Lovelace" dashboard using data collected from the Inverter & the ability to change modes/configuration via MQTT._
@@ -38,15 +38,22 @@ _Example #2: Grafana summary allowing more detailed analysis of data collected, 
 
 ## Prerequisites
 
-- Docker
-- Docker-compose
 - [Voltronic/Axpert/MPPSolar](https://www.ebay.com.au/sch/i.html?_from=R40&_trksid=p2334524.m570.l1313.TR11.TRC1.A0.H0.Xaxpert+inverter.TRS0&_nkw=axpert+inverter&_sacat=0&LH_TitleDesc=0&LH_PrefLoc=2&_osacat=0&_odkw=solar+inverter&LH_TitleDesc=0) based inverter that you want to monitor
 - Home Assistant [running with a MQTT Server](https://www.home-assistant.io/components/mqtt/)
 
 
 ## Configuration & Standing Up
 
-It's pretty straightforward, just clone down the sources and set the configuration files in the `config/` directory:
+It's pretty straightforward, just install the repository and then the Addon
+configure the IP of HA and MQTT user and password.
+
+
+pendiente de revisar...
+
+
+
+
+
 
 ```bash
 # Clone down sources on the host you want to monitor...
