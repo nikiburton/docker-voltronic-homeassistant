@@ -1,34 +1,29 @@
-FROM --platform=${TARGETPLATFORM:-linux/amd64} debian:bookworm-slim
+FROM ghcr.io/home-assistant/aarch64-base:latest
 
-# Instalamos las herramientas necesarias
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    git \
+# 1. Instalamos dependencias para compilar y ejecutar
+RUN apk add --no-cache \
     build-essential \
     cmake \
-    jq \
+    git \
     mosquitto-clients \
-    && rm -rf /var/lib/apt/lists/*
+    bash \
+    g++ \
+    make
 
-# Creamos la carpeta y copiamos los archivos
-RUN mkdir -p /opt/sources
-ADD sources/ /opt/sources/
-ADD config/ /etc/inverter/
+# 2. Copiamos los archivos DIRECTAMENTE en /opt/
+# Esto hará que /opt/inverter-cli y /opt/inverter-mqtt existan
+COPY sources/ /opt/
+COPY config/ /etc/inverter/
 
-# 1. Compilamos SOLAMENTE el inverter-cli (el poller)
-# Usamos el fix para asegurar que se instale en el sistema
-RUN cd /opt/sources/inverter-cli && \
+# 3. Compilamos el poller (inverter-cli)
+RUN cd /opt/inverter-cli && \
     cmake . && \
     make && \
     cp inverter_poller /usr/bin/
 
-# 2. Damos permisos al entrypoint
-# Nota: La ruta suele ser /opt/sources/inverter-mqtt/entrypoint.sh
-RUN chmod +x /opt/sources/inverter-mqtt/entrypoint.sh
+# 4. Preparamos el entrypoint y los scripts
+RUN chmod +x /opt/inverter-mqtt/entrypoint.sh && \
+    chmod +x /opt/inverter-mqtt/mqtt-subscriber.sh
 
-# 3. Salud
-HEALTHCHECK --interval=30s --timeout=10s --start-period=1m --retries=3 \
-    CMD mosquitto_pub -h localhost -t "status/health" -m "OK" || exit 1
-
-WORKDIR /opt/sources
-ENTRYPOINT ["/bin/bash", "/opt/sources/inverter-mqtt/entrypoint.sh"]
+WORKDIR /opt/inverter-mqtt
+ENTRYPOINT ["/bin/bash", "/opt/inverter-mqtt/entrypoint.sh"]
