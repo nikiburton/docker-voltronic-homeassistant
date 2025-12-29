@@ -3,45 +3,44 @@ export TERM=xterm
 
 CONFIG_PATH=/data/options.json
 
-# 1. Leer configuración de HA
+# 1. Leer configuración
 MQTT_HOST=$(jq --raw-output '.mqtt_host' $CONFIG_PATH)
 MQTT_USER=$(jq --raw-output '.mqtt_user' $CONFIG_PATH)
 MQTT_PASS=$(jq --raw-output '.mqtt_password' $CONFIG_PATH)
 MQTT_PORT=$(jq --raw-output '.mqtt_port' $CONFIG_PATH)
 
-# 2. Rutas fijas confirmadas por el log
+# 2. Rutas corregidas
 JSON_FILE="/etc/inverter/mqtt.json"
 SCRIPTS_DIR="/opt/inverter-mqtt"
+# El poller está en /opt/inverter-cli/inverter_poller (según tu log)
+POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
-echo "Configurando $JSON_FILE con host: $MQTT_HOST"
-
-# 3. Parchear el JSON (donde el programa busca la config)
+# 3. Parchear el JSON
 if [ -f "$JSON_FILE" ]; then
+    echo "Configurando $JSON_FILE..."
     sed -i "s@\[HA_MQTT_IP\]@$MQTT_HOST@g" "$JSON_FILE"
     sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
     sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" "$JSON_FILE"
     sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
     sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
+    
+    # PARCHE EXTRA: El script mqtt-push.sh suele llamar al poller por una ruta fija.
+    # Vamos a crear un enlace simbólico para que siempre lo encuentre:
+    mkdir -p /opt/inverter-cli/bin
+    ln -sf "$POLLER_BIN" /opt/inverter-cli/bin/inverter_poller
     sync
-else
-    echo "ERROR: $JSON_FILE no encontrado."
-    exit 1
 fi
 
-# 4. Exportar variables para los scripts
 export MQTT_HOST MQTT_USER MQTT_PASS MQTT_PORT
 
-# 5. Ejecutar los scripts desde su carpeta real
 cd "$SCRIPTS_DIR"
-echo "Iniciando procesos en $PWD..."
+echo "Iniciando procesos..."
 
-# Lanzar registro inicial
+# Ejecutar con logs visibles para depurar el Connection Refused
 /bin/bash ./mqtt-init.sh
-sleep 2
 
-# Lanzar procesos en segundo plano
 watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
-# Proceso principal
+# Ejecutar el push
 watch -n 30 /bin/bash ./mqtt-push.sh
