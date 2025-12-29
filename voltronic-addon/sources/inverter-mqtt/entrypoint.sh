@@ -1,32 +1,34 @@
 #!/bin/bash
 export TERM=xterm
 
-# --- NUEVA SECCIÓN DE CONFIGURACIÓN ---
-# Leer configuración de Home Assistant (usando jq para parsear el archivo options.json)
 CONFIG_PATH=/data/options.json
 
+# Leer configuración de HA
 MQTT_HOST=$(jq --raw-output '.mqtt_host' $CONFIG_PATH)
 MQTT_USER=$(jq --raw-output '.mqtt_user' $CONFIG_PATH)
 MQTT_PASS=$(jq --raw-output '.mqtt_password' $CONFIG_PATH)
 MQTT_PORT=$(jq --raw-output '.mqtt_port' $CONFIG_PATH)
 
-echo "Configurando mqtt.json con los datos de la interfaz..."
+# Buscar dónde está realmente el mqtt.json
+JSON_FILE=$(find /opt -name "mqtt.json" | head -n 1)
 
-# Sustituir los valores en el archivo mqtt.json
-# Usamos @ como delimitador en sed por si la contraseña tiene caracteres raros
-sed -i "s@\[HA_MQTT_IP\]@$MQTT_HOST@g" /opt/inverter-mqtt/mqtt.json
-sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" /opt/inverter-mqtt/mqtt.json
-sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" /opt/inverter-mqtt/mqtt.json
-sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" /opt/inverter-mqtt/mqtt.json
+if [ -f "$JSON_FILE" ]; then
+    echo "Configurando $JSON_FILE con host: $MQTT_HOST"
+    # Parchear el archivo
+    sed -i "s@\[HA_MQTT_IP\]@$MQTT_HOST@g" "$JSON_FILE"
+    sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
+    sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" "$JSON_FILE"
+    sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
+    sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
+else
+    echo "ERROR: No se encontró mqtt.json en /opt"
+fi
 
-echo "MQTT configurado hacia el host: $MQTT_HOST"
-# ---------------------------------------
+# Exportar variables para que los otros scripts las vean directamente
+export MQTT_HOST MQTT_USER MQTT_PASS MQTT_PORT
 
-# Init the mqtt server for the first time, then every 5 minutes
-watch -n 300 /opt/inverter-mqtt/mqtt-init.sh > /dev/null 2>&1 &
-
-# Run the MQTT Subscriber process
-/opt/inverter-mqtt/mqtt-subscriber.sh &
-
-# Execute exactly every 30 seconds
-watch -n 30 /opt/inverter-mqtt/mqtt-push.sh > /dev/null 2>&1
+# Lanzar los scripts originales (usando rutas relativas al archivo encontrado)
+BASE_DIR=$(dirname "$JSON_FILE")
+watch -n 300 "$BASE_DIR/mqtt-init.sh" > /dev/null 2>&1 &
+"$BASE_DIR/mqtt-subscriber.sh" &
+watch -n 30 "$BASE_DIR/mqtt-push.sh" > /dev/null 2>&1
