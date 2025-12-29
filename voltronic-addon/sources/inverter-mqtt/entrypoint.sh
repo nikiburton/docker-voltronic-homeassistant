@@ -18,11 +18,11 @@ SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
 # --- CONFIGURACIÓN DE PERMISOS PARA HID ---
-echo "Configurando acceso al dispositivo HID..."
-# Intentar dar permiso al nodo hidraw específico
-chmod 666 /dev/hidraw* 2>/dev/null
-# Si el binario usa libusb, a veces necesita que el dispositivo del bus sea escribible
-chmod 666 /dev/bus/usb/003/002 2>/dev/null
+echo "Forzando creación de nodo HID..."
+# Esto crea el archivo que el programa dice que no encuentra
+mknod -m 666 /dev/hidraw0 c 242 0 2>/dev/null
+# Damos permisos a los buses
+chmod -R 777 /dev/bus/usb/
 echo "Permisos aplicados."
 # -------------------------------------------
 
@@ -52,8 +52,8 @@ echo "Iniciando procesos en $PWD..."
 watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
-echo "Haciendo prueba de lectura manual (Verboso)..."
-# Intentamos ejecutar el poller directamente apuntando al dispositivo
+echo "Haciendo prueba de lectura manual..."
+# Aquí le pasamos el parámetro -p para decirle que use el hidraw
 /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
 
 # Bucle principal de envío de datos
