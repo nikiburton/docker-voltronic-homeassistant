@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "--- DETALLE DE DISPOSITIVOS USB ---"
+lsusb
+echo "------------------------------------"
 export TERM=xterm
 
 CONFIG_PATH=/data/options.json
