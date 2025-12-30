@@ -19,15 +19,14 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 
 echo "Usando dispositivo HID: $DEVICE"
 
-# 1. LIBERACIÓN DEL DISPOSITIVO (Crucial para HAOS)
+# 1. LIBERACIÓN DEL DISPOSITIVO
 echo "Intentando liberar $DEVICE del driver usbhid..."
-# Intentamos remontar /sys como RW por si acaso
 mount -o remount,rw /sys 2>/dev/null || true
 
 for dev in /sys/bus/usb/drivers/usbhid/*:*; do
     if [ -e "$dev" ]; then
         echo "Desvinculando $(basename $dev)..."
-        echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind || echo "Aviso: No se pudo desvincular $(basename $dev)"
+        echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: No se pudo desvincular $(basename $dev)"
     fi
 done
 
@@ -47,39 +46,33 @@ if [ -f "$JSON_FILE" ]; then
     sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
 fi
 
-# 4. PREPARACIÓN DEL INVERTER.CONF (Solución al errno=2)
+# 4. PREPARACIÓN DEL INVERTER.CONF
 cd "$SCRIPTS_DIR"
 if [ -f "$CONF_FILE" ]; then
     echo "Actualizando $CONF_FILE con el dispositivo $DEVICE..."
     sed -i "s|^device=.*|device=$DEVICE|" "$CONF_FILE"
-    # Copiamos el config a rutas alternativas donde el poller suele buscar
+    # Copiamos a rutas alternativas por seguridad
     cp "$CONF_FILE" /usr/bin/inverter.conf
     cp "$CONF_FILE" /etc/inverter.conf
-else
-    echo "ERROR: No se encuentra el archivo $CONF_FILE"
 fi
 
-### eliminar cuando se ajuste en el inverter.conf
-sed -i "s|^qpiri=.*|qpiri=106|" /opt/inverter-mqtt/inverter.conf
-sed -i "s|^qpigs=.*|qpigs=110|" /opt/inverter-mqtt/inverter.conf
-sed -i "s|^qpiws=.*|qpiws=36|" /opt/inverter-mqtt/inverter.conf
-### eliminar cuando se ajuste en el inverter.conf
-
-# 5. EJECUCIÓN CON DIAGNÓSTICO
-echo "Prueba directa de lectura HID con STRACE..."
+# 5. INICIO DE PROCESOS MQTT (Sin bloqueo)
 chmod +x "$POLLER_BIN"
+chmod +x ./*.sh
 
-# Usamos strace para ver exactamente qué archivo falla si el errno=2 persiste
-strace -f -e trace=open,openat "$POLLER_BIN" -d 2>&1 | grep -E "inverter\.conf|hidraw|open" || {
-    echo "El poller se ha detenido. Revisa los mensajes de openat arriba."
-}
+echo "Iniciando procesos de MQTT..."
 
-# 6. Iniciar procesos de MQTT (solo si el poller no bloquea el script)
-echo "Iniciando procesos de fondo..."
+# Ejecutamos el Auto-Discovery (mqtt-init.sh)
+# No usamos strace aquí para que no bloquee
 /bin/bash ./mqtt-init.sh
-watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
+
+# Lanzamos el suscriptor en segundo plano
 /bin/bash ./mqtt-subscriber.sh &
 
-# Mantener loop de push
-echo "Ejecutando loop de datos..."
+# Iniciamos el loop de actualización cada 300s para el init (opcional)
+watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
+
+# 6. LOOP PRINCIPAL DE DATOS
+# Este comando se queda ejecutándose y es el que mantiene el addon vivo
+echo "Ejecutando loop de datos (mqtt-push.sh)..."
 exec watch -n 30 /bin/bash ./mqtt-push.sh
