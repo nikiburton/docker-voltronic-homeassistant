@@ -55,16 +55,24 @@ sleep 2
 
 # 5. EL BUCLE DEFINITIVO
 while true; do
-  echo "--- [LECTURA] $(date) ---"
+  echo "--- [1/3] INICIANDO COMUNICACIÓN ---"
+  date
   
-  # Forzamos al binario a usar el archivo de configuración con -c
-  # Usamos '|| true' para que el addon siga vivo aunque falle el USB
-  $POLLER_BIN -d -c "$CONF_FILE" || echo "Error en poller, ignorando..."
+  # Usamos 'timeout' de Linux para que si el binario se cuelga, el script lo mate tras 15s
+  # Esto evita que el addon se quede "mudo"
+  if timeout 15s $POLLER_BIN -d -c "$CONF_FILE"; then
+      echo "--- [2/3] LECTURA EXITOSA ---"
+  else
+      echo "--- [2/3] ERROR: El poller tardó demasiado o falló (Timeout) ---"
+  fi
   
-  echo "--- [ENVÍO] ---"
-  /bin/bash ./mqtt-push.sh || echo "Error en push, ignorando..."
+  echo "--- [3/3] INTENTANDO MQTT PUSH ---"
+  if /bin/bash ./mqtt-push.sh; then
+      echo "Datos enviados a MQTT correctamente."
+  else
+      echo "Fallo al enviar a MQTT."
+  fi
   
-  # Aumentamos un poco el sleep para no saturar el bus USB
-  echo "--- [ESPERA] 30 segundos ---"
+  echo "--- [ESPERA] Ciclo terminado. Durmiendo 30s ---"
   sleep 30
 done
