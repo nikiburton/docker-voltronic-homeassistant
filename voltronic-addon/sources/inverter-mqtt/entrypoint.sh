@@ -40,14 +40,26 @@ fi
 # 3. Configuración de MQTT JSON
 if [ -f "$JSON_FILE" ]; then
     echo "Configurando $JSON_FILE..."
-    echo "MQTT Host leído: $MQTT_HOST"
-    echo "Dispositivo configurado: $DEVICE $MQTT_USER $MQTT_PASS"
     sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
     sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" "$JSON_FILE"
     sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
     sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
 fi
+# ... (después de los comandos sed) ...
 
+if [ -f "$JSON_FILE" ]; then
+    echo "--- VERIFICACIÓN DE CONFIGURACIÓN MQTT ---"
+    # Mostramos el archivo pero ocultamos la contraseña por seguridad
+    cat "$JSON_FILE" | grep -v '"password"' 
+    echo "------------------------------------------"
+fi
+
+export MQTT_HOST MQTT_USER MQTT_PASS MQTT_PORT DEVICE
+
+cd "$SCRIPTS_DIR"
+echo "Iniciando procesos..."
+
+# Ejecutar el inicializador de MQTT
 # 4. PREPARACIÓN DEL INVERTER.CONF
 cd "$SCRIPTS_DIR"
 if [ -f "$CONF_FILE" ]; then
