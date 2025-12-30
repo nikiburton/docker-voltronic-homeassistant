@@ -5,12 +5,12 @@
 # --- RUTAS CORREGIDAS ---
 BIN="/usr/bin/inverter_poller"
 CONF="/opt/inverter-mqtt/inverter.conf"
-MQTT_CONF="/opt/inverter-mqtt/mqtt.CONF"
+MQTT_CONF="/opt/inverter-mqtt/mqtt.json"
 
 # Verificar que los archivos existen antes de seguir
 if [ ! -f "$BIN" ]; then echo "ERROR: No se encuentra el binario en $BIN"; exit 1; fi
 if [ ! -f "$CONF" ]; then echo "ERROR: No se encuentra el config en $CONF"; exit 1; fi
-if [ ! -f "$MQTT_CONF" ]; then echo "ERROR: No se encuentra el mqtt.CONF en $MQTT_CONF"; exit 1; fi
+if [ ! -f "$MQTT_CONF" ]; then echo "ERROR: No se encuentra el mqtt.json en $MQTT_CONF"; exit 1; fi
 
 # Leer configuración de MQTT
 MQTT_SERVER=$(jq -r '.server' $MQTT_CONF)
