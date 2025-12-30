@@ -17,8 +17,12 @@ MQTT_SERVER=$(jq -r '.server' $MQTT_CONF)
 MQTT_PORT=$(jq -r '.port' $MQTT_CONF)
 MQTT_USERNAME=$(jq -r '.username' $MQTT_CONF)
 MQTT_PASSWORD=$(jq -r '.password' $MQTT_CONF)
+MQTT_TOPIC=$(jq -r '.topic' $MQTT_JSON)
+MQTT_DEVICENAME=$(jq -r '.devicename' $MQTT_JSON)
+MQTT_CLIENTID=$(jq -r '.clientid' $MQTT_JSON)
 
-echo "Iniciando Auto-Discovery de MQTT en $MQTT_HOST..."
+echo "Iniciando Auto-Discovery de MQTT en $MQTT_HOST para el dispositivo $MQTT_DEVICENAME..."
+
 
 # Ejecutar el poller para obtener los datos actuales
 # Usamos la ruta absoluta del binario y el config
