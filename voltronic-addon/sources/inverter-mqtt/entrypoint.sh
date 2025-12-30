@@ -19,7 +19,6 @@ POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
 echo "Usando dispositivo HID: $DEVICE"
 
-# Comprobación real del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
     ls -l /dev/hidraw*
@@ -43,13 +42,8 @@ fi
 cd "$SCRIPTS_DIR"
 
 echo "Preparando compatibilidad hiddev..."
-
 mkdir -p /dev/usb
-
-if [ ! -e /dev/usb/hiddev0 ]; then
-    ln -s /dev/hidraw0 /dev/usb/hiddev0
-fi
-
+ln -sf "$DEVICE" /dev/usb/hiddev0
 ls -l /dev/usb/hiddev0
 
 echo "Prueba directa de lectura HID..."
