@@ -58,12 +58,23 @@ fi
 # 5. Ejecución
 cd "$SCRIPTS_DIR" || { echo "ERROR: No se pudo entrar a $SCRIPTS_DIR"; exit 1; }
 
-echo "Prueba directa de lectura HID..."
+echo "=== INICIANDO RASTREO DE DIAGNÓSTICO (STRACE) ==="
+# Aseguramos que el binario tenga permisos
 chmod +x "$POLLER_BIN"
-"$POLLER_BIN" -d -p "$DEVICE" || {
-    echo "ERROR: fallo acceso HID. Verifica permisos o si el dispositivo está ocupado."
-    # No salimos aquí para intentar que el resto del addon funcione si es un error temporal
+
+# Ejecutamos con strace para ver qué archivos intenta abrir realmente.
+# Filtramos por 'open' para ver rutas de archivos y dispositivos.
+strace -f -e trace=open,openat "$POLLER_BIN" -d 2>&1 | grep -E "inverter\.conf|hidraw|ttyUSB|open" || {
+    echo "El rastreo ha finalizado o el poller se ha detenido."
 }
+echo "=== FIN DEL RASTREO ==="
+
+# echo "Prueba directa de lectura HID..."
+# chmod +x "$POLLER_BIN"
+# "$POLLER_BIN" -d -p "$DEVICE" || {
+#    echo "ERROR: fallo acceso HID. Verifica permisos o si el dispositivo está ocupado."
+    # No salimos aquí para intentar que el resto del addon funcione si es un error temporal
+#}
 
 echo "Iniciando procesos de MQTT..."
 /bin/bash ./mqtt-init.sh
