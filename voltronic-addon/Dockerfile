@@ -7,8 +7,8 @@ RUN apk add --no-cache \
     git \
     mosquitto-clients \
     bash \
-    jq
-    strace  # <--- Añade esto
+    jq \
+    strace
 
 # 2. Copiamos los archivos de sources a /opt/
 # Primero copiamos SOLO la carpeta del poller y compilamos
