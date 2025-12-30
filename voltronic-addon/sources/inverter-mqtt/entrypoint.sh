@@ -7,6 +7,7 @@ echo "------------------------------------"
 
 CONFIG_PATH=/data/options.json
 
+# Leer opciones del addon
 MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
 MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
 MQTT_PASS=$(jq -r '.mqtt_password' $CONFIG_PATH)
@@ -19,6 +20,7 @@ POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
 echo "Usando dispositivo HID: $DEVICE"
 
+# Comprobación real del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
     ls -l /dev/hidraw*
@@ -41,30 +43,25 @@ fi
 
 cd "$SCRIPTS_DIR"
 
+# --- SYMLINK HIDROBUSTO ---
 echo "Preparando compatibilidad hiddev..."
-
-# Creamos directorio si no existe
 mkdir -p /dev/usb
+ln -sf "$DEVICE" /dev/usb/hiddev0 2>/dev/null
+ls -l /dev/usb/hiddev0
+# --- FIN SYMLINK HIDROBUSTO ---
 
-# Symlink principal esperado por Voltronic
-ln -sf "$DEVICE" /dev/usb/hiddev0 || true
-
-# Symlink alternativo por si el binario busca /dev/hiddev0 directamente
-ln -sf "$DEVICE" /dev/hiddev0 || true
-
-# Comprobación final
-ls -l /dev/usb/hiddev0 /dev/hiddev0 /dev/hidraw0 || true
-
-
+# Ejecutar prueba directa con el path seguro
 echo "Prueba directa de lectura HID..."
-"$POLLER_BIN" -d -p "$DEVICE" || {
+"$POLLER_BIN" -d -p /dev/usb/hiddev0 || {
     echo "ERROR: fallo acceso HID"
     exit 1
 }
 
+# Iniciar procesos de MQTT
 echo "Iniciando procesos..."
 /bin/bash ./mqtt-init.sh
 watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
+# Mantener loop de push
 exec watch -n 30 /bin/bash ./mqtt-push.sh
