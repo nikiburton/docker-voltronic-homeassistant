@@ -16,7 +16,7 @@ DEVICE=$(jq -r '.device' $CONFIG_PATH)
 # Definir rutas fijas para evitar errores de "null directory"
 JSON_FILE="/etc/inverter/mqtt.json"
 SCRIPTS_DIR="/opt/inverter-mqtt"
-POLLER_BIN="/opt/inverter-cli/inverter_poller"
+POLLER_BIN="/usr/bin/inverter_poller"
 
 echo "Usando dispositivo HID: $DEVICE"
 
