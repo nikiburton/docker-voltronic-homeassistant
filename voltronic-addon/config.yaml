@@ -1,6 +1,6 @@
 name: "Voltronic Inverter GCC Fix"
 description: "Version addon para fallos de compilacion"
-version: "1.0.6"
+version: "1.0.7"
 slug: "voltronic_gcc_fix"
 arch:
   - aarch64
@@ -10,14 +10,16 @@ arch:
 init: false
 full_access: true
 apparmor: false
-privileged: true
+privileged:
+  - SYS_ADMIN
+  - SYS_RAWIO
 devices:
-  - /dev/bus/usb:/dev/bus/usb
-  - /dev/hidraw0:/dev/hidraw0
-  - /dev/hidraw1:/dev/hidraw1
-  - /dev/ttyUSB0:/dev/ttyUSB0
+  - /dev/bus/usb
+  - /dev/hidraw0
+  - /dev/hidraw1
+  - /dev/ttyUSB0
 map:
-  - "config:/etc/inverter:rw"
+  - config:rw
 options:
   device: "/dev/hidraw0"
   mqtt_host: "192.168.1.XXX"
