@@ -1,6 +1,6 @@
 name: "Voltronic Inverter GCC Fix"
 description: "Versión corregida para fallos de compilación std::string"
-version: "1.0.3"
+version: "1.0.4"
 slug: "voltronic_gcc_fix"
 arch:
   - aarch64
@@ -9,20 +9,17 @@ arch:
   - armv7
 init: false
 full_access: true
-apparmor: false #Esto elimina el perfil de seguridad que impide el chmod
-privileged:
-  - SYS_RAWIO
-  - DAC_READ_SEARCH
+apparmor: false
+privileged: true  # <--- CAMBIADO: De lista a 'true'
 devices:
   - /dev/bus/usb:/dev/bus/usb
   - /dev/hidraw0:/dev/hidraw0
+  - /dev/hidraw1:/dev/hidraw1
   - /dev/ttyUSB0:/dev/ttyUSB0
-  - /dev/ttyUSB1:/dev/ttyUSB1
-  - /dev/ttyACM0:/dev/ttyACM0
 map:
   - "config:/etc/inverter:rw"
 options:
-  device: "/dev/ttyUSB0"
+  device: "/dev/hidraw0" # <--- CAMBIADO: Por defecto para tu modelo HID
   mqtt_host: "192.168.1.XXX"
   mqtt_user: "tu_usuario"
   mqtt_password: "tu_password"
