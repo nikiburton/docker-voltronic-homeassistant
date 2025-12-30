@@ -1,5 +1,6 @@
 #!/usr/bin/with-contenv bash
-set -e
+# 1. ELIMINAR O COMENTAR set -e
+set -e  <-- ESTO ES LO QUE DETIENE EL ADDON. Mejor quitarlo.
 
 echo "--- DETALLE DE DISPOSITIVOS USB ---"
 lsusb
@@ -19,22 +20,11 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 
 echo "Usando dispositivo HID: $DEVICE"
 
-# 1. LIBERACIÓN DEL DISPOSITIVO
-#echo "Intentando liberar $DEVICE del driver usbhid..."
-#mount -o remount,rw /sys 2>/dev/null || true
-
-#for dev in /sys/bus/usb/drivers/usbhid/*:*; do
- #   if [ -e "$dev" ]; then
-  #      echo "Desvinculando $(basename $dev)..."
-   #     echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: No se pudo desvincular $(basename $dev)"
-    #fi
-#done
-
 # 2. Comprobación del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
     ls -l /dev/hidraw* || echo "No hay dispositivos hidraw disponibles"
-    exit 1
+    # No salimos con exit 1 para que el addon no entre en bucle de reinicio
 fi
 
 # 3. Configuración de MQTT JSON
@@ -46,50 +36,35 @@ if [ -f "$JSON_FILE" ]; then
     sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
 fi
 
-echo "Iniciando procesos..."
-
-# Ejecutar el inicializador de MQTT
 # 4. PREPARACIÓN DEL INVERTER.CONF
 cd "$SCRIPTS_DIR"
 if [ -f "$CONF_FILE" ]; then
     echo "Actualizando $CONF_FILE con el dispositivo $DEVICE..."
     sed -i "s|^device=.*|device=$DEVICE|" "$CONF_FILE"
-    # Copiamos a rutas alternativas por seguridad
-    cp "$CONF_FILE" /usr/bin/inverter.conf
+    # Copiamos a la ruta por defecto donde el binario suele buscar
     cp "$CONF_FILE" /etc/inverter.conf
 fi
 
-# 5. INICIO DE PROCESOS MQTT (Sin bloqueo)
 chmod +x "$POLLER_BIN"
 chmod +x ./*.sh
 
 echo "Iniciando procesos de MQTT..."
-
-# Ejecutamos el Auto-Discovery (mqtt-init.sh)
-# No usamos strace aquí para que no bloquee en segundo plano
 /bin/bash ./mqtt-init.sh &
-
-echo "Iniciando procesos..."
-
-# 1. Lanzamos el suscriptor en segundo plano
+sleep 2
 /bin/bash ./mqtt-subscriber.sh &
 
-# 2. El bucle que lee los datos y evita que el addon se detenga
+# 5. EL BUCLE DEFINITIVO
 while true; do
-  echo "--- [LECTURA] Intentando ciclo completo ---"
+  echo "--- [LECTURA] $(date) ---"
   
-  # Ejecutamos el poller normal (que lee todo según el .conf)
-  # Añadimos '|| true' para que NUNCA detenga el addon aunque falle la lectura
-  echo "BINARIO INVERTER VERSION 2025-12-30 HIDRAW FIX"
-  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0 || true
+  # Forzamos al binario a usar el archivo de configuración con -c
+  # Usamos '|| true' para que el addon siga vivo aunque falle el USB
+  $POLLER_BIN -d -c "$CONF_FILE" || echo "Error en poller, ignorando..."
   
-  echo "--- [ENVÍO] Procesando datos MQTT ---"
-  /bin/bash ./mqtt-push.sh || true
+  echo "--- [ENVÍO] ---"
+  /bin/bash ./mqtt-push.sh || echo "Error en push, ignorando..."
   
-  # Truco: "Reset" del puerto USB a nivel lógico antes de la siguiente vuelta
-#  echo "Limpiando buffer..."
-#  cat /dev/hidraw0 > /dev/null & sleep 1; kill $! 2>/dev/null || true
-  
+  # Aumentamos un poco el sleep para no saturar el bus USB
   echo "--- [ESPERA] 30 segundos ---"
   sleep 30
 done
