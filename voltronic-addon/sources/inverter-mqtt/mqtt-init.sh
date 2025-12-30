@@ -38,13 +38,9 @@ mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" -u "$MQTT_USERNAME" -P "$MQTT_PA
 DATA=$($BIN -d)
 
 registerTopic () {
-    mosquitto_pub \
-        -h $MQTT_SERVER \
-        -p $MQTT_PORT \
-        -u "$MQTT_USERNAME" \
-        -P "$MQTT_PASSWORD" \
-        -i $MQTT_CLIENTID \
-        -t "$MQTT_TOPIC/sensor/"$MQTT_DEVICENAME"_$1/config" \
+    mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
+        -i "$MQTT_CLIENTID" \
+        -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME"_$1/config" \
         -m "{
             \"name\": \""$MQTT_DEVICENAME"_$1\",
             \"unit_of_measurement\": \"$2\",
@@ -55,11 +51,11 @@ registerTopic () {
 
 registerInverterRawCMD () {
     mosquitto_pub \
-        -h $MQTT_SERVER \
-        -p $MQTT_PORT \
+        -h "$MQTT_SERVER" \
+        -p "$MQTT_PORT" \
         -u "$MQTT_USERNAME" \
         -P "$MQTT_PASSWORD" \
-        -i $MQTT_CLIENTID \
+        -i "$MQTT_CLIENTID" \
         -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/config" \
         -m "{
             \"name\": \""$MQTT_DEVICENAME"\",
