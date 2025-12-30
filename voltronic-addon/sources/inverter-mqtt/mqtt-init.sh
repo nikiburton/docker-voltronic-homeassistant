@@ -13,10 +13,10 @@ if [ ! -f "$CONF" ]; then echo "ERROR: No se encuentra el config en $CONF"; exit
 if [ ! -f "$MQTT_CONF" ]; then echo "ERROR: No se encuentra el mqtt.json en $MQTT_CONF"; exit 1; fi
 
 # Leer configuración de MQTT
-MQTT_HOST=$(jq -r '.server' $MQTT_CONF)
+MQTT_SERVER=$(jq -r '.server' $MQTT_CONF)
 MQTT_PORT=$(jq -r '.port' $MQTT_CONF)
-MQTT_USER=$(jq -r '.username' $MQTT_CONF)
-MQTT_PASS=$(jq -r '.password' $MQTT_CONF)
+MQTT_USERNAME=$(jq -r '.username' $MQTT_CONF)
+MQTT_PASSWORD=$(jq -r '.password' $MQTT_CONF)
 
 echo "Iniciando Auto-Discovery de MQTT en $MQTT_HOST..."
 
