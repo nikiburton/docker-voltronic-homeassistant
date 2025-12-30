@@ -1,5 +1,5 @@
 name: "Voltronic Inverter GCC Fix"
-description: "Versión corregida para fallos de compilación std::string"
+description: "Versión addon para fallos de compilación std::string"
 version: "1.0.5"
 slug: "voltronic_gcc_fix"
 arch:
@@ -21,8 +21,8 @@ map:
 options:
   device: "/dev/hidraw0"
   mqtt_host: "192.168.1.XXX"
-  mqtt_user: "tu_usuario"
-  mqtt_password: "tu_password"
+  mqtt_user: "mqtt-user"
+  mqtt_password: "mqtt-user1234"
   mqtt_port: 1883
 schema:
   device: str
