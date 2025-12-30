@@ -1,31 +1,34 @@
 name: "Voltronic Inverter GCC Fix"
-description: "Version addon para fallos de compilacion"
-version: "1.0.7"
+description: "Addon Voltronic compatible con Home Assistant OS"
+version: "1.0.8"
 slug: "voltronic_gcc_fix"
 arch:
   - aarch64
   - amd64
   - armhf
   - armv7
+
 init: false
-full_access: true
 apparmor: false
-privileged:
-  - SYS_ADMIN
+
+privileged: false
+
+capabilities:
   - SYS_RAWIO
+
 devices:
-  - /dev/bus/usb
-  - /dev/hidraw0
-  - /dev/hidraw1
-  - /dev/ttyUSB0
+  - /dev/hidraw*
+
 map:
   - config:rw
+
 options:
   device: "/dev/hidraw0"
   mqtt_host: "192.168.1.XXX"
   mqtt_user: "mqtt-user"
   mqtt_password: "mqtt-user1234"
   mqtt_port: 1883
+
 schema:
   device: str
   mqtt_host: str
