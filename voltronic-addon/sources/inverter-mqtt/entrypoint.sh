@@ -69,23 +69,16 @@ echo "Iniciando procesos de MQTT..."
 # No usamos strace aquí para que no bloquee en segundo plano
 /bin/bash ./mqtt-init.sh &
 
-# Lanzamos el suscriptor en segundo plano
+echo "Iniciando procesos..."
+
+# 1. Lanzamos el suscriptor en segundo plano
 /bin/bash ./mqtt-subscriber.sh &
 
-# Iniciamos el loop de actualización cada 300s para el init (opcional)
-# watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
-
+# 2. El bucle que lee los datos y evita que el addon se detenga
 while true; do
-  echo "--- [LECTURA] Pidiendo datos al inversor ---"
-  # Ejecutamos el push. Si este script falla en procesar el JSON,
-  # al menos ya sabemos que el poller lee bien.
+  # Ejecuta la lectura y envío
   /bin/bash ./mqtt-push.sh
   
-  echo "--- [ESPERA] ---"
+  # Espera 30 segundos
   sleep 30
 done
-
-# 6. LOOP PRINCIPAL DE DATOS
-# Este comando se queda ejecutándose y es el que mantiene el addon vivo
-echo "Ejecutando loop de datos (mqtt-push.sh)..."
-exec watch -n 30 /bin/bash ./mqtt-push.sh
