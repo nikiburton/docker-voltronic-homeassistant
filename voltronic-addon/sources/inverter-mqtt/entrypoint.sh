@@ -18,15 +18,31 @@ SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
 # --- CONFIGURACIÓN DE PERMISOS PARA HID ---
-echo "Forzando creación de nodo HID..."
-# Esto crea el archivo que el programa dice que no encuentra
-mknod -m 666 /dev/hidraw0 c 242 0 2>/dev/null
-# Damos permisos a los buses
-chmod -R 777 /dev/bus/usb/
+echo "Configurando acceso al dispositivo HID..."
+
+# Detectar el major number de hidraw dinámicamente
+HIDRAW_MAJOR=$(grep hidraw /proc/devices | awk '{print $1}')
+
+if [ -n "$HIDRAW_MAJOR" ]; then
+    echo "Detectado hidraw major number: $HIDRAW_MAJOR"
+    rm -f /dev/hidraw0
+    mknod -m 666 /dev/hidraw0 c $HIDRAW_MAJOR 0
+    echo "Nodo /dev/hidraw0 creado con éxito."
+else
+    echo "ADVERTENCIA: No se detectó driver hidraw en /proc/devices."
+fi
+
+# Desvincular del driver usbhid para evitar bloqueos
+echo "Liberando dispositivo del driver usbhid..."
+for dev in /sys/bus/usb/drivers/usbhid/[0-9]*; do
+    [ -e "$dev" ] && echo $(basename $dev) > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null
+done
+
+chmod -R 777 /dev/bus/usb/ 2>/dev/null
 echo "Permisos aplicados."
 # -------------------------------------------
 
-# 3. Parchear el JSON
+# 3. Parchear el JSON (Tu bloque original es correcto)
 if [ -f "$JSON_FILE" ]; then
     echo "Configurando $JSON_FILE..."
     sed -i "s@\[HA_MQTT_IP\]@$MQTT_HOST@g" "$JSON_FILE"
@@ -41,7 +57,6 @@ if [ -f "$JSON_FILE" ]; then
 fi
 
 export MQTT_HOST MQTT_USER MQTT_PASS MQTT_PORT
-
 cd "$SCRIPTS_DIR"
 echo "Iniciando procesos en $PWD..."
 
@@ -53,8 +68,9 @@ watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
 echo "Haciendo prueba de lectura manual..."
-# Aquí le pasamos el parámetro -p para decirle que use el hidraw
-/opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
+ls -l /dev/hidraw0
+# Forzamos la ejecución del poller con el parámetro de dispositivo
+$POLLER_BIN -d -p /dev/hidraw0
 
-# Bucle principal de envío de datos
+# Bucle principal
 watch -n 30 /bin/bash ./mqtt-push.sh
