@@ -20,7 +20,7 @@ POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
 echo "Usando dispositivo HID: $DEVICE"
 
-# Comprobación real del dispositivo
+# Comprobación del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
     ls -l /dev/hidraw*
@@ -46,11 +46,11 @@ cd "$SCRIPTS_DIR"
 # --- SYMLINK HIDROBUSTO ---
 echo "Preparando compatibilidad hiddev..."
 mkdir -p /dev/usb
-ln -sf "$DEVICE" /dev/usb/hiddev0 2>/dev/null
-ls -l /dev/usb/hiddev0
+ln -sf "$DEVICE" /dev/usb/hiddev0 2>/dev/null || true
+ls -l /dev/usb/hiddev0 || true
 # --- FIN SYMLINK HIDROBUSTO ---
 
-# Ejecutar prueba directa con el path seguro
+# Ejecutar prueba directa con path seguro
 echo "Prueba directa de lectura HID..."
 "$POLLER_BIN" -d -p /dev/usb/hiddev0 || {
     echo "ERROR: fallo acceso HID"
