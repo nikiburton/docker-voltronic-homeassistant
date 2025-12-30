@@ -3,15 +3,15 @@ INFLUX_ENABLED=`cat /opt/inverter-mqtt/mqtt.json | jq '.influx.enabled' -r`
 
 pushMQTTData () {
     # --- RUTA CORREGIDA ---
-    MQTT_JSON="/opt/inverter-mqtt/mqtt.json"
+    MQTT_CONF="/opt/inverter-mqtt/mqtt.json"
 
-    MQTT_SERVER=`cat $MQTT_JSON | jq '.server' -r`
-    MQTT_PORT=`cat $MQTT_JSON | jq '.port' -r`
-    MQTT_TOPIC=`cat $MQTT_JSON | jq '.topic' -r`
-    MQTT_DEVICENAME=`cat $MQTT_JSON | jq '.devicename' -r`
-    MQTT_USERNAME=`cat $MQTT_JSON | jq '.username' -r`
-    MQTT_PASSWORD=`cat $MQTT_JSON | jq '.password' -r`
-    MQTT_CLIENTID=`cat $MQTT_JSON | jq '.clientid' -r`
+    MQTT_SERVER=`cat $MQTT_CONF | jq '.server' -r`
+    MQTT_PORT=`cat $MQTT_CONF | jq '.port' -r`
+    MQTT_TOPIC=`cat $MQTT_CONF | jq '.topic' -r`
+    MQTT_DEVICENAME=`cat $MQTT_CONF | jq '.devicename' -r`
+    MQTT_USERNAME=`cat $MQTT_CONF | jq '.username' -r`
+    MQTT_PASSWORD=`cat $MQTT_CONF | jq '.password' -r`
+    MQTT_CLIENTID=`cat $MQTT_CONF | jq '.clientid' -r`
 
     mosquitto_pub \
         -h $MQTT_SERVER \
