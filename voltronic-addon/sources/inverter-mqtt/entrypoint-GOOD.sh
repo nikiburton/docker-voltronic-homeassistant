@@ -5,22 +5,6 @@ echo "--- DETALLE DE DISPOSITIVOS USB ---"
 lsusb
 echo "------------------------------------"
 
-echo "Usando dispositivo HID: /dev/hidraw0"
-
-echo "BINARIO INVERTER DEBUG FIX"
-# Ejecutar solo una vez
-/opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
-
-echo "FIN DE PRUEBA, el addon no entra en bucle"
-sleep infinity
-
-#!/usr/bin/with-contenv bash
-set -e
-
-echo "--- DETALLE DE DISPOSITIVOS USB ---"
-lsusb
-echo "------------------------------------"
-
 CONFIG_PATH=/data/options.json
 MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
 MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
