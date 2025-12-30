@@ -115,44 +115,53 @@ bool cInverter::query(const char *cmd, int replysize) {
     write(fd, &buf, n);
     time(&started);
 
-    do {
-        n = read(fd, (void*)buf+i, replysize-i);
-        if (n < 0) {
-            if (time(NULL) - started > 2) {
-                lprintf("INVERTER: %s read timeout", cmd);
-                break;
-            } else {
-                usleep(10);
-                continue;
-            }
-        }
+i = 0;
+memset(buf, 0, sizeof(buf));
 
-        i += n;
-    } while (i<replysize);
+do {
+    n = read(fd, &buf[i], 1);
+
+    if (n > 0) {
+        if (buf[i] == 0x0d) { // CR = fin de mensaje Voltronic
+            i++;
+            break;
+        }
+        i++;
+    } else {
+        if (time(NULL) - started > 2) {
+            lprintf("INVERTER: %s read timeout", cmd);
+            close(fd);
+            return false;
+        }
+        usleep(1000);
+    }
+} while (i < sizeof(buf) - 1);
+
     close(fd);
 
-    if (i==replysize) {
+ lprintf("INVERTER: %s reply size (%d bytes)", cmd, i);
 
-        lprintf("INVERTER: %s reply size (%d bytes)", cmd, i);
+if (i < 5) {
+    lprintf("INVERTER: %s reply too short (%d bytes)", cmd, i);
+    return false;
+}
 
-        if (buf[0]!='(' || buf[replysize-1]!=0x0d) {
-            lprintf("INVERTER: %s: incorrect start/stop bytes.  Buffer: %s", cmd, buf);
-            return false;
-        }
-        if (!(CheckCRC(buf, replysize))) {
-            lprintf("INVERTER: %s: CRC Failed!  Reply size: %d  Buffer: %s", cmd, replysize, buf);
-            return false;
-        }
+if (buf[0] != '(' || buf[i-1] != 0x0d) {
+    lprintf("INVERTER: %s: incorrect start/stop bytes. Buffer: %s", cmd, buf);
+    return false;
+}
 
-        buf[i-3] = '\0'; //nullterminating on first CRC byte
-        lprintf("INVERTER: %s: %d bytes read: %s", cmd, i, buf);
+if (!CheckCRC(buf, i)) {
+    lprintf("INVERTER: %s: CRC Failed! Buffer: %s", cmd, buf);
+    return false;
+}
 
-        lprintf("INVERTER: %s query finished", cmd);
-        return true;
-    } else {
-        lprintf("INVERTER: %s reply too short (%d bytes)", cmd, i);
-        return false;
-    }
+buf[i-3] = '\0';  // elimina CRC y CR
+lprintf("INVERTER: %s: %d bytes read: %s", cmd, i, buf);
+
+lprintf("INVERTER: %s query finished", cmd);
+return true;
+
 }
 
 void cInverter::poll() {
