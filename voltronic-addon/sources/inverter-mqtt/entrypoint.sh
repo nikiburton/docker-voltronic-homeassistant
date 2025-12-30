@@ -40,6 +40,8 @@ fi
 # 3. Configuración de MQTT JSON
 if [ -f "$JSON_FILE" ]; then
     echo "Configurando $JSON_FILE..."
+    echo "MQTT Host leído: $MQTT_HOST"
+    echo "Dispositivo configurado: $DEVICE $MQTT_USER $MQTT_PASS"
     sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
     sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" "$JSON_FILE"
     sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
