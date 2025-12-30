@@ -75,10 +75,14 @@ echo "Iniciando procesos de MQTT..."
 # Iniciamos el loop de actualización cada 300s para el init (opcional)
 # watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 
-# En lugar de usar watch, usamos un bucle simple que nos muestre todo en el log
 while true; do
-  echo "--- Intentando lectura del inversor ---"
+  echo "--- [DEBUG] Intentando comunicación directa con el inversor ---"
+  # Intentamos la lectura manual con el binario directamente
+  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
+  
+  echo "--- [DEBUG] Ejecutando script de envío MQTT ---"
   /bin/bash ./mqtt-push.sh
+  
   sleep 30
 done
 
