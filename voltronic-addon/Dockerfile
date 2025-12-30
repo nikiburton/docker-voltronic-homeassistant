@@ -1,6 +1,6 @@
 FROM ghcr.io/home-assistant/aarch64-base:latest
 
-# 1. Instalamos dependencias (Añadimos jq que es imprescindible)
+# 1. Instalamos dependencias (jq es vital para leer tu configuración)
 RUN apk add --no-cache \
     build-base \
     cmake \
@@ -9,11 +9,9 @@ RUN apk add --no-cache \
     bash \
     jq
 
-# 2. Copiamos los archivos
+# 2. Copiamos los archivos de sources a /opt/
+# Esto ya incluye tu mqtt.json e inverter.conf si los pusiste ahí
 COPY sources/ /opt/
-# Si ya moviste mqtt.json e inverter.conf fuera de aquí, esta línea no hará nada malo, 
-# pero asegúrate de que la carpeta 'config/' no esté vacía en GitHub o Docker podría dar error.
-COPY config/ /etc/inverter/ 
 
 # 3. Compilamos el poller
 RUN cd /opt/inverter-cli && \
@@ -21,8 +19,9 @@ RUN cd /opt/inverter-cli && \
     make && \
     cp inverter_poller /usr/bin/
 
-# 4. Preparamos permisos (Damos permiso a TODOS los .sh para evitar fallos de ejecución)
+# 4. Damos permisos de ejecución a todos los scripts
 RUN chmod +x /opt/inverter-mqtt/*.sh
 
+# 5. Directorio de trabajo y arranque
 WORKDIR /opt/inverter-mqtt
 ENTRYPOINT ["/bin/bash", "/opt/inverter-mqtt/entrypoint.sh"]
