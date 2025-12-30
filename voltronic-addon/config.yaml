@@ -1,6 +1,6 @@
 name: "Voltronic Inverter HAOS"
 description: "Addon para leer datos del inversor Voltronic con compatibilidad HAOS"
-version: "1.1.1"
+version: "1.1.2"
 slug: "voltronic_haos"
 arch:
   - aarch64
@@ -10,11 +10,19 @@ arch:
 init: false
 full_access: true
 apparmor: false
-privileged: true  # <--- CAMBIO CLAVE: Úsalo como booleano para evitar errores
+
+# Volvemos al formato de lista que pide tu Supervisor, 
+# pero añadimos todas las necesarias para el acceso al hardware.
+privileged:
+  - SYS_ADMIN
+  - SYS_RAWIO
+  - SYS_TIME
+  - DAC_READ_SEARCH
+
 hardware: usb
 
-# Hemos quitado la sección 'devices' porque con full_access: true es redundante 
-# y causaba el warning que bloqueaba la configuración.
+# Eliminamos 'devices' para evitar el warning de "selective device access"
+# que también bloquea la interfaz.
 
 map:
   - config:rw
