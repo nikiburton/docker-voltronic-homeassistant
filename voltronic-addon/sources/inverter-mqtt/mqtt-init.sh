@@ -21,7 +21,7 @@ MQTT_TOPIC=$(jq -r '.topic' "$MQTT_CONF")
 MQTT_DEVICENAME=$(jq -r '.devicename' "$MQTT_CONF")
 MQTT_CLIENTID=$(jq -r '.clientid' "$MQTT_CONF")
 
-echo "Iniciando MQTT Discovery en $MQTT_SERVER para dispositivo $MQTT_DEVICENAME..."
+echo "Iniciando MQTT Discovery en $MQTT_SERVER para dispositivo $MQTT_DEVICENAME en puerto $MQTT_PORT username $MQTT_USERNAME topic $MQTT_TOPIC y cliente $MQTT_CLIENTID"
 
 # --- Leer datos iniciales del inversor ---
 DATA=$($BIN -d)
