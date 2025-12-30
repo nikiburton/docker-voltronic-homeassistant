@@ -1,69 +1,75 @@
 #!/bin/bash
 #
-# Simple script to register the MQTT topics when the container starts for the first time...
+# Script para registrar sensores en Home Assistant via MQTT Discovery
+# y publicar el estado inicial desde el inversor.
 
-# --- RUTAS CORREGIDAS ---
 BIN="/usr/bin/inverter_poller"
 CONF="/opt/inverter-mqtt/inverter.conf"
 MQTT_CONF="/opt/inverter-mqtt/mqtt.json"
 
-# Verificar que los archivos existen antes de seguir
-if [ ! -f "$BIN" ]; then echo "ERROR: No se encuentra el binario en $BIN"; exit 1; fi
-if [ ! -f "$CONF" ]; then echo "ERROR: No se encuentra el config en $CONF"; exit 1; fi
-if [ ! -f "$MQTT_CONF" ]; then echo "ERROR: No se encuentra el mqtt.json en $MQTT_CONF"; exit 1; fi
+# --- Verificar existencia de archivos ---
+for f in "$BIN" "$CONF" "$MQTT_CONF"; do
+    [ ! -f "$f" ] && echo "ERROR: No se encuentra $f" && exit 1
+done
 
-# Leer configuración de MQTT
-MQTT_SERVER=$(jq -r '.server' $MQTT_CONF)
-MQTT_PORT=$(jq -r '.port' $MQTT_CONF)
-MQTT_USERNAME=$(jq -r '.username' $MQTT_CONF)
-MQTT_PASSWORD=$(jq -r '.password' $MQTT_CONF)
-MQTT_TOPIC=$(jq -r '.topic' $MQTT_CONF)
-MQTT_DEVICENAME=$(jq -r '.devicename' $MQTT_CONF)
-MQTT_CLIENTID=$(jq -r '.clientid' $MQTT_CONF)
+# --- Leer configuración MQTT ---
+MQTT_SERVER=$(jq -r '.server' "$MQTT_CONF")
+MQTT_PORT=$(jq -r '.port' "$MQTT_CONF")
+MQTT_USERNAME=$(jq -r '.username' "$MQTT_CONF")
+MQTT_PASSWORD=$(jq -r '.password' "$MQTT_CONF")
+MQTT_TOPIC=$(jq -r '.topic' "$MQTT_CONF")
+MQTT_DEVICENAME=$(jq -r '.devicename' "$MQTT_CONF")
+MQTT_CLIENTID=$(jq -r '.clientid' "$MQTT_CONF")
 
-echo "Iniciando Auto-Discovery de MQTT en $MQTT_SERVER para el dispositivo $MQTT_DEVICENAME..."
+echo "Iniciando MQTT Discovery en $MQTT_SERVER para dispositivo $MQTT_DEVICENAME..."
 
-echo "DEBUG: Generando mensaje de Discovery para un sensor..."
-echo "Topic: homeassistant/sensor/$MQTT_DEVICENAME/ac_grid_voltage/config"
-echo "Payload: {\"name\": \"$MQTT_DEVICENAME AC Grid Voltage\", \"state_topic\": \"$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/AC_grid_voltage\", \"unit_of_measurement\": \"V\", \"device_class\": \"voltage\"}"
-
-# Prueba de envío con salida de error visible
-mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
-  -t "homeassistant/sensor/$MQTT_DEVICENAME/ac_grid_voltage/config" \
-  -m "{\"name\": \"$MQTT_DEVICENAME AC Grid Voltage\", \"state_topic\": \"$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/AC_grid_voltage\", \"unit_of_measurement\": \"V\", \"device_class\": \"voltage\"}" \
-  -d # El parámetro -d mostrará si hay errores de conexión
-
-# Ejecutar el poller para obtener los datos actuales
-# Usamos la ruta absoluta del binario y el config
+# --- Leer datos iniciales del inversor ---
 DATA=$($BIN -d)
+if [ -z "$DATA" ]; then
+    echo "ERROR: No se pudieron leer datos del inversor"
+    exit 1
+fi
 
+# --- Función para registrar sensor y publicar estado inicial ---
 registerTopic () {
-    mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
-        -i "$MQTT_CLIENTID" \
-        -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME"_$1/config" \
-        -m "{
-            \"name\": \""$MQTT_DEVICENAME"_$1\",
-            \"unit_of_measurement\": \"$2\",
-            \"state_topic\": \"$MQTT_TOPIC/sensor/"$MQTT_DEVICENAME"_$1\",
-            \"icon\": \"mdi:$3\"
-        }"
+    local key="$1"
+    local unit="$2"
+    local icon="$3"
+
+    # Topic de configuración para Home Assistant
+    local state_topic="$MQTT_TOPIC/sensor/${MQTT_DEVICENAME}_${key}"
+    local config_topic="$state_topic/config"
+
+    # JSON seguro con jq
+    jq -n \
+       --arg name "${MQTT_DEVICENAME}_${key}" \
+       --arg unit "$unit" \
+       --arg state_topic "$state_topic" \
+       --arg icon "$icon" \
+       '{
+         name: $name,
+         unit_of_measurement: $unit,
+         state_topic: $state_topic,
+         icon: $icon
+       }' | mosquitto_pub \
+       -h "$MQTT_SERVER" -p "$MQTT_PORT" \
+       -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
+       -i "$MQTT_CLIENTID" \
+       -t "$config_topic"
+
+    # Publicar valor inicial
+    local value
+    value=$(echo "$DATA" | jq -r --arg key "$key" '.[$key]')
+    [ "$value" != "null" ] && mosquitto_pub \
+       -h "$MQTT_SERVER" -p "$MQTT_PORT" \
+       -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
+       -i "$MQTT_CLIENTID" \
+       -t "$state_topic" \
+       -m "$value"
 }
 
-registerInverterRawCMD () {
-    mosquitto_pub \
-        -h "$MQTT_SERVER" \
-        -p "$MQTT_PORT" \
-        -u "$MQTT_USERNAME" \
-        -P "$MQTT_PASSWORD" \
-        -i "$MQTT_CLIENTID" \
-        -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/config" \
-        -m "{
-            \"name\": \""$MQTT_DEVICENAME"\",
-            \"state_topic\": \"$MQTT_TOPIC/sensor/$MQTT_DEVICENAME\"
-        }"
-}
-
-registerTopic "Inverter_mode" "" "solar-power" # 1 = Power_On, 2 = Standby, 3 = Line, 4 = Battery, 5 = Fault, 6 = Power_Saving, 7 = Unknown
+# --- Registrar todos los sensores ---
+registerTopic "Inverter_mode" "" "solar-power"
 registerTopic "AC_grid_voltage" "V" "power-plug"
 registerTopic "AC_grid_frequency" "Hz" "current-ac"
 registerTopic "AC_out_voltage" "V" "power-plug"
@@ -96,5 +102,9 @@ registerTopic "Out_source_priority" "" "grid"
 registerTopic "Charger_source_priority" "" "solar-power"
 registerTopic "Battery_redischarge_voltage" "V" "battery-negative"
 
-# Add in a separate topic so we can send raw commands from assistant back to the inverter via MQTT (such as changing power modes etc)...
-registerInverterRawCMD
+# --- Topic para enviar comandos al inversor desde Home Assistant ---
+mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" \
+    -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
+    -i "$MQTT_CLIENTID" \
+    -t "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/config" \
+    -m "$(jq -n --arg name "$MQTT_DEVICENAME" --arg state_topic "$MQTT_TOPIC/sensor/$MQTT_DEVICENAME" '{name: $name, state_topic: $state_topic}')"
