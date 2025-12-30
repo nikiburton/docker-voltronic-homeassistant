@@ -45,18 +45,7 @@ if [ -f "$JSON_FILE" ]; then
     sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
     sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
 fi
-# ... (después de los comandos sed) ...
 
-if [ -f "$JSON_FILE" ]; then
-    echo "--- VERIFICACIÓN DE CONFIGURACIÓN MQTT ---"
-    # Mostramos el archivo pero ocultamos la contraseña por seguridad
-    cat "$JSON_FILE" | grep -v '"password"' 
-    echo "------------------------------------------"
-fi
-
-export MQTT_HOST MQTT_USER MQTT_PASS MQTT_PORT DEVICE
-
-cd "$SCRIPTS_DIR"
 echo "Iniciando procesos..."
 
 # Ejecutar el inicializador de MQTT
