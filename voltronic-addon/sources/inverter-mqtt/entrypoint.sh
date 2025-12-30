@@ -63,8 +63,8 @@ chmod +x ./*.sh
 echo "Iniciando procesos de MQTT..."
 
 # Ejecutamos el Auto-Discovery (mqtt-init.sh)
-# No usamos strace aquí para que no bloquee
-/bin/bash ./mqtt-init.sh
+# No usamos strace aquí para que no bloquee en segundo plano
+/bin/bash ./mqtt-init.sh &
 
 # Lanzamos el suscriptor en segundo plano
 /bin/bash ./mqtt-subscriber.sh &
