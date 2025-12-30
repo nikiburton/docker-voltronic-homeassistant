@@ -42,9 +42,19 @@ fi
 cd "$SCRIPTS_DIR"
 
 echo "Preparando compatibilidad hiddev..."
+
+# Creamos directorio si no existe
 mkdir -p /dev/usb
+
+# Symlink principal esperado por Voltronic
 ln -sf "$DEVICE" /dev/usb/hiddev0
-ls -l /dev/usb/hiddev0
+
+# Symlink alternativo por si el binario busca /dev/hiddev0 directamente
+ln -sf "$DEVICE" /dev/hiddev0
+
+# Comprobación final
+ls -l /dev/usb/hiddev0 /dev/hiddev0 /dev/hidraw0 || true
+
 
 echo "Prueba directa de lectura HID..."
 "$POLLER_BIN" -d -p "$DEVICE" || {
