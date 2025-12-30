@@ -1,34 +1,26 @@
-name: "Voltronic Inverter GCC Fix"
-description: "Addon Voltronic compatible con Home Assistant OS"
+name: "Voltronic Inverter HAOS"
+description: "Addon para leer datos del inversor Voltronic con compatibilidad HAOS"
 version: "1.0.8"
-slug: "voltronic_gcc_fix"
-
+slug: "voltronic_haos"
 arch:
   - aarch64
   - amd64
   - armhf
   - armv7
-
 init: false
+full_access: true
 apparmor: false
-
-privileged:
-  - SYS_RAWIO
-
+privileged: true
 devices:
-  - /dev/hidraw0
-  - /dev/hidraw1
-  
+  - /dev/hidraw0:/dev/hidraw0
 map:
   - config:rw
-
 options:
   device: "/dev/hidraw0"
   mqtt_host: "192.168.1.XXX"
   mqtt_user: "mqtt-user"
   mqtt_password: "mqtt-user1234"
   mqtt_port: 1883
-
 schema:
   device: str
   mqtt_host: str
