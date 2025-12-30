@@ -76,9 +76,12 @@ echo "Iniciando procesos..."
 
 # 2. El bucle que lee los datos y evita que el addon se detenga
 while true; do
-  # Ejecuta la lectura y envío
+  echo "--- [DEBUG] Intentando comunicación directa con el inversor ---"
+  # Intentamos la lectura manual con el binario directamente
+  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
+  
+  echo "--- [DEBUG] Ejecutando script de envío MQTT ---"
   /bin/bash ./mqtt-push.sh
   
-  # Espera 30 segundos
   sleep 30
 done
