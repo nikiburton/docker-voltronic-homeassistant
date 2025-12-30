@@ -73,7 +73,7 @@ bool cInverter::query(const char *cmd, int replysize) {
     int fd;
     int i=0, n;
 
-    fd = open(this->device.data(), O_RDWR | O_NONBLOCK);
+    fd = open(this->device.data(), O_RDWR);
     if (fd == -1) {
         lprintf("INVERTER: Unable to open device file (errno=%d %s)", errno, strerror(errno));
         sleep(5);
@@ -95,6 +95,9 @@ bool cInverter::query(const char *cmd, int replysize) {
     settings.c_cflag |= CS8 | CLOCAL;  // 8 bits
     // settings.c_lflag = ICANON;         // canonical mode
     settings.c_oflag &= ~OPOST;        // raw output
+
+    settings.c_cc[VMIN]  = 0;
+    settings.c_cc[VTIME] = 20; // 2 segundos (20 x 100ms)
 
     tcsetattr(fd, TCSANOW, &settings); // apply the settings
     tcflush(fd, TCOFLUSH);
