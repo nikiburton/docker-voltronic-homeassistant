@@ -42,6 +42,16 @@ fi
 
 cd "$SCRIPTS_DIR"
 
+echo "Preparando compatibilidad hiddev..."
+
+mkdir -p /dev/usb
+
+if [ ! -e /dev/usb/hiddev0 ]; then
+    ln -s /dev/hidraw0 /dev/usb/hiddev0
+fi
+
+ls -l /dev/usb/hiddev0
+
 echo "Prueba directa de lectura HID..."
 "$POLLER_BIN" -d -p "$DEVICE" || {
     echo "ERROR: fallo acceso HID"
