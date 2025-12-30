@@ -2,13 +2,27 @@
 #
 # Simple script to register the MQTT topics when the container starts for the first time...
 
-MQTT_SERVER=`cat /etc/inverter/mqtt.json | jq '.server' -r`
-MQTT_PORT=`cat /etc/inverter/mqtt.json | jq '.port' -r`
-MQTT_TOPIC=`cat /etc/inverter/mqtt.json | jq '.topic' -r`
-MQTT_DEVICENAME=`cat /etc/inverter/mqtt.json | jq '.devicename' -r`
-MQTT_USERNAME=`cat /etc/inverter/mqtt.json | jq '.username' -r`
-MQTT_PASSWORD=`cat /etc/inverter/mqtt.json | jq '.password' -r`
-MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`
+# --- RUTAS CORREGIDAS ---
+BIN="/usr/bin/inverter_poller"
+CONF="/opt/inverter-mqtt/inverter.conf"
+MQTT_CONF="/opt/inverter-mqtt/mqtt.json"
+
+# Verificar que los archivos existen antes de seguir
+if [ ! -f "$BIN" ]; then echo "ERROR: No se encuentra el binario en $BIN"; exit 1; fi
+if [ ! -f "$CONF" ]; then echo "ERROR: No se encuentra el config en $CONF"; exit 1; fi
+if [ ! -f "$MQTT_CONF" ]; then echo "ERROR: No se encuentra el mqtt.json en $MQTT_CONF"; exit 1; fi
+
+# Leer configuración de MQTT
+MQTT_HOST=$(jq -r '.server' $MQTT_CONF)
+MQTT_PORT=$(jq -r '.port' $MQTT_CONF)
+MQTT_USER=$(jq -r '.username' $MQTT_CONF)
+MQTT_PASS=$(jq -r '.password' $MQTT_CONF)
+
+echo "Iniciando Auto-Discovery de MQTT en $MQTT_HOST..."
+
+# Ejecutar el poller para obtener los datos actuales
+# Usamos la ruta absoluta del binario y el config
+DATA=$($BIN -d)
 
 registerTopic () {
     mosquitto_pub \
