@@ -23,6 +23,15 @@ MQTT_CLIENTID=$(jq -r '.clientid' $MQTT_CONF)
 
 echo "Iniciando Auto-Discovery de MQTT en $MQTT_SERVER para el dispositivo $MQTT_DEVICENAME..."
 
+echo "DEBUG: Generando mensaje de Discovery para un sensor..."
+echo "Topic: homeassistant/sensor/$MQTT_DEVICENAME/ac_grid_voltage/config"
+echo "Payload: {\"name\": \"$MQTT_DEVICENAME AC Grid Voltage\", \"state_topic\": \"$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/AC_grid_voltage\", \"unit_of_measurement\": \"V\", \"device_class\": \"voltage\"}"
+
+# Prueba de envío con salida de error visible
+mosquitto_pub -h "$MQTT_SERVER" -p "$MQTT_PORT" -u "$MQTT_USERNAME" -P "$MQTT_PASSWORD" \
+  -t "homeassistant/sensor/$MQTT_DEVICENAME/ac_grid_voltage/config" \
+  -m "{\"name\": \"$MQTT_DEVICENAME AC Grid Voltage\", \"state_topic\": \"$MQTT_TOPIC/sensor/$MQTT_DEVICENAME/AC_grid_voltage\", \"unit_of_measurement\": \"V\", \"device_class\": \"voltage\"}" \
+  -d # El parámetro -d mostrará si hay errores de conexión
 
 # Ejecutar el poller para obtener los datos actuales
 # Usamos la ruta absoluta del binario y el config
