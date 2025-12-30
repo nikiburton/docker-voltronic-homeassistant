@@ -46,6 +46,8 @@ float wattfactor;
 int qpiri, qpiws, qmod, qpigs;
 
 // ---------------------------------------
+printf("MAIN ARRANCADO\n");
+fflush(stdout);
 
 void attemptAddSetting(int *addTo, string addFrom) {
     try {
