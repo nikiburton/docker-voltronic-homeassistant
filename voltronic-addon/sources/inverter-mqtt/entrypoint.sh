@@ -6,8 +6,6 @@ lsusb
 echo "------------------------------------"
 
 CONFIG_PATH=/data/options.json
-
-# Leer opciones del addon
 MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
 MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
 MQTT_PASS=$(jq -r '.mqtt_password' $CONFIG_PATH)
@@ -43,16 +41,9 @@ fi
 
 cd "$SCRIPTS_DIR"
 
-# --- SYMLINK HIDROBUSTO ---
-echo "Preparando compatibilidad hiddev..."
-mkdir -p /dev/usb
-ln -sf "$DEVICE" /dev/usb/hiddev0 2>/dev/null || true
-ls -l /dev/usb/hiddev0 || true
-# --- FIN SYMLINK HIDROBUSTO ---
-
-# Ejecutar prueba directa con path seguro
+# --- Prueba directa con hidraw0 ---
 echo "Prueba directa de lectura HID..."
-"$POLLER_BIN" -d -p /dev/usb/hiddev0 || {
+"$POLLER_BIN" -d -p "$DEVICE" || {
     echo "ERROR: fallo acceso HID"
     exit 1
 }
