@@ -8,6 +8,8 @@ arch:
   - armhf
   - armv7
 init: false
+host_ipc: true
+host_network: true
 full_access: true
 apparmor: false
 
