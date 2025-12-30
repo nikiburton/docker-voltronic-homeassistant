@@ -76,13 +76,12 @@ echo "Iniciando procesos de MQTT..."
 # watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 
 while true; do
-  echo "--- [DEBUG] Intentando comunicación directa con el inversor ---"
-  # Intentamos la lectura manual con el binario directamente
-  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0
-  
-  echo "--- [DEBUG] Ejecutando script de envío MQTT ---"
+  echo "--- [LECTURA] Pidiendo datos al inversor ---"
+  # Ejecutamos el push. Si este script falla en procesar el JSON,
+  # al menos ya sabemos que el poller lee bien.
   /bin/bash ./mqtt-push.sh
   
+  echo "--- [ESPERA] ---"
   sleep 30
 done
 
