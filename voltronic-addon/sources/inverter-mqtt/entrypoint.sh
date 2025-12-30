@@ -73,7 +73,14 @@ echo "Iniciando procesos de MQTT..."
 /bin/bash ./mqtt-subscriber.sh &
 
 # Iniciamos el loop de actualización cada 300s para el init (opcional)
-watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
+# watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
+
+# En lugar de usar watch, usamos un bucle simple que nos muestre todo en el log
+while true; do
+  echo "--- Intentando lectura del inversor ---"
+  /bin/bash ./mqtt-push.sh
+  sleep 30
+done
 
 # 6. LOOP PRINCIPAL DE DATOS
 # Este comando se queda ejecutándose y es el que mantiene el addon vivo
