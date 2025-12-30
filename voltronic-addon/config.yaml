@@ -1,6 +1,6 @@
 name: "Voltronic Inverter GCC Fix"
-description: "Versión addon para fallos de compilación std::string"
-version: "1.0.5"
+description: "Version addon para fallos de compilacion"
+version: "1.0.6"
 slug: "voltronic_gcc_fix"
 arch:
   - aarch64
