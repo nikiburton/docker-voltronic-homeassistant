@@ -16,8 +16,9 @@ privileged:
   - SYS_RAWIO
 
 devices:
-  - /dev/hidraw*
-
+  - /dev/hidraw0
+  - /dev/hidraw1
+  
 map:
   - config:rw
 
