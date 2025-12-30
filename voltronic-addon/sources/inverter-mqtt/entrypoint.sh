@@ -6,26 +6,27 @@ lsusb
 echo "------------------------------------"
 
 CONFIG_PATH=/data/options.json
-MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
-MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
-MQTT_PASS=$(jq -r '.mqtt_password' $CONFIG_PATH)
-MQTT_PORT=$(jq -r '.mqtt_port' $CONFIG_PATH)
 DEVICE=$(jq -r '.device' $CONFIG_PATH)
-
-JSON_FILE="/etc/inverter/mqtt.json"
-SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
-echo "Usando dispositivo HID: $DEVICE"
+# --- LIBERACIÓN DEL DISPOSITIVO (SOLUCIÓN AL SECUESTRO) ---
+echo "Intentando liberar $DEVICE del driver usbhid..."
+for dev in /sys/bus/usb/drivers/usbhid/*-*:*; do
+    if [ -e "$dev" ]; then
+        echo "Desvinculando $(basename $dev)..."
+        echo $(basename $dev) > /sys/bus/usb/drivers/usbhid/unbind || true
+    fi
+done
 
-# Comprobación del dispositivo
+# Comprobación de existencia
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
-    ls -l /dev/hidraw*
     exit 1
 fi
 
-ls -l "$DEVICE"
+# Verificar dependencias del binario (por si el errno=2 es por una lib faltante)
+echo "Verificando dependencias del poller..."
+ldd "$POLLER_BIN" || echo "Aviso: No se pudo ejecutar ldd"
 
 # Parchear MQTT JSON
 if [ -f "$JSON_FILE" ]; then
@@ -41,12 +42,10 @@ fi
 
 cd "$SCRIPTS_DIR"
 
-# --- Prueba directa con hidraw0 ---
 echo "Prueba directa de lectura HID..."
-"$POLLER_BIN" -d -p "$DEVICE" || {
-    echo "ERROR: fallo acceso HID"
-    exit 1
-}
+# Aseguramos permisos de ejecución y lanzamos
+chmod +x "$POLLER_BIN"
+"$POLLER_BIN" -d -p "$DEVICE"
 
 # Iniciar procesos de MQTT
 echo "Iniciando procesos..."
