@@ -5,30 +5,45 @@ echo "--- DETALLE DE DISPOSITIVOS USB ---"
 lsusb
 echo "------------------------------------"
 
+# 1. Cargar variables de configuración
 CONFIG_PATH=/data/options.json
+MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
+MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
+MQTT_PASS=$(jq -r '.mqtt_password' $CONFIG_PATH)
+MQTT_PORT=$(jq -r '.mqtt_port' $CONFIG_PATH)
 DEVICE=$(jq -r '.device' $CONFIG_PATH)
+
+# Definir rutas fijas para evitar errores de "null directory"
+JSON_FILE="/etc/inverter/mqtt.json"
+SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/opt/inverter-cli/inverter_poller"
 
-# --- LIBERACIÓN DEL DISPOSITIVO (SOLUCIÓN AL SECUESTRO) ---
-echo "Intentando liberar $DEVICE del driver usbhid..."
-for dev in /sys/bus/usb/drivers/usbhid/*-*:*; do
-    if [ -e "$dev" ]; then
-        echo "Desvinculando $(basename $dev)..."
-        echo $(basename $dev) > /sys/bus/usb/drivers/usbhid/unbind || true
-    fi
-done
+echo "Usando dispositivo HID: $DEVICE"
 
-# Comprobación de existencia
+# 2. LIBERACIÓN DEL DISPOSITIVO (Crucial para evitar el bloqueo del Kernel)
+echo "Intentando liberar $DEVICE del driver usbhid..."
+if [ -e /sys/bus/usb/drivers/usbhid/unbind ]; then
+    for dev in /sys/bus/usb/drivers/usbhid/*:*; do
+        if [ -e "$dev" ]; then
+            echo "Desvinculando $(basename $dev)..."
+            # Usamos sh -c para asegurar que la redirección funcione con permisos
+            echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind || true
+        fi
+    done
+else
+    echo "AVISO: No se puede escribir en /sys. RECUERDA DESACTIVAR EL 'PROTECTION MODE' EN HA."
+fi
+
+# 3. Comprobación del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
+    ls -l /dev/hidraw* || echo "No hay dispositivos hidraw disponibles"
     exit 1
 fi
 
-# Verificar dependencias del binario (por si el errno=2 es por una lib faltante)
-echo "Verificando dependencias del poller..."
-ldd "$POLLER_BIN" || echo "Aviso: No se pudo ejecutar ldd"
+ls -l "$DEVICE"
 
-# Parchear MQTT JSON
+# 4. Configuración de MQTT JSON
 if [ -f "$JSON_FILE" ]; then
     echo "Configurando $JSON_FILE..."
     sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
@@ -40,18 +55,21 @@ if [ -f "$JSON_FILE" ]; then
     ln -sf "$POLLER_BIN" /opt/inverter-cli/bin/inverter_poller
 fi
 
-cd "$SCRIPTS_DIR"
+# 5. Ejecución
+cd "$SCRIPTS_DIR" || { echo "ERROR: No se pudo entrar a $SCRIPTS_DIR"; exit 1; }
 
 echo "Prueba directa de lectura HID..."
-# Aseguramos permisos de ejecución y lanzamos
 chmod +x "$POLLER_BIN"
-"$POLLER_BIN" -d -p "$DEVICE"
+"$POLLER_BIN" -d -p "$DEVICE" || {
+    echo "ERROR: fallo acceso HID. Verifica permisos o si el dispositivo está ocupado."
+    # No salimos aquí para intentar que el resto del addon funcione si es un error temporal
+}
 
-# Iniciar procesos de MQTT
-echo "Iniciando procesos..."
+echo "Iniciando procesos de MQTT..."
 /bin/bash ./mqtt-init.sh
 watch -n 300 /bin/bash ./mqtt-init.sh > /dev/null 2>&1 &
 /bin/bash ./mqtt-subscriber.sh &
 
 # Mantener loop de push
+echo "Ejecutando loop de datos..."
 exec watch -n 30 /bin/bash ./mqtt-push.sh
