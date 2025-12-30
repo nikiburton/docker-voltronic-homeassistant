@@ -10,16 +10,12 @@ RUN apk add --no-cache \
     jq
 
 # 2. Copiamos los archivos de sources a /opt/
-# Esto ya incluye tu mqtt.json e inverter.conf si los pusiste ahí
-COPY sources/ /opt/
+# Primero copiamos SOLO la carpeta del poller y compilamos
+COPY sources/inverter-cli/ /opt/inverter-cli/
+RUN cd /opt/inverter-cli && cmake . && make -j$(nproc) && cp inverter_poller /usr/bin/
 
-# 3. Compilamos el poller
-RUN cd /opt/inverter-cli && \
-    cmake . && \
-    make && \
-    cp inverter_poller /usr/bin/
-
-# 4. Damos permisos de ejecución a todos los scripts
+# Después copiamos el resto de scripts (que es lo que más solemos cambiar)
+COPY sources/inverter-mqtt/ /opt/inverter-mqtt/
 RUN chmod +x /opt/inverter-mqtt/*.sh
 
 # 5. Directorio de trabajo y arranque
