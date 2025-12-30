@@ -20,15 +20,15 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 echo "Usando dispositivo HID: $DEVICE"
 
 # 1. LIBERACIÓN DEL DISPOSITIVO
-echo "Intentando liberar $DEVICE del driver usbhid..."
-mount -o remount,rw /sys 2>/dev/null || true
+#echo "Intentando liberar $DEVICE del driver usbhid..."
+#mount -o remount,rw /sys 2>/dev/null || true
 
-for dev in /sys/bus/usb/drivers/usbhid/*:*; do
-    if [ -e "$dev" ]; then
-        echo "Desvinculando $(basename $dev)..."
-        echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: No se pudo desvincular $(basename $dev)"
-    fi
-done
+#for dev in /sys/bus/usb/drivers/usbhid/*:*; do
+ #   if [ -e "$dev" ]; then
+  #      echo "Desvinculando $(basename $dev)..."
+   #     echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: No se pudo desvincular $(basename $dev)"
+    #fi
+#done
 
 # 2. Comprobación del dispositivo
 if [ ! -e "$DEVICE" ]; then
@@ -87,8 +87,8 @@ while true; do
   /bin/bash ./mqtt-push.sh || true
   
   # Truco: "Reset" del puerto USB a nivel lógico antes de la siguiente vuelta
-  echo "Limpiando buffer..."
-  cat /dev/hidraw0 > /dev/null & sleep 1; kill $! 2>/dev/null || true
+#  echo "Limpiando buffer..."
+#  cat /dev/hidraw0 > /dev/null & sleep 1; kill $! 2>/dev/null || true
   
   echo "--- [ESPERA] 30 segundos ---"
   sleep 30
