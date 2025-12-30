@@ -60,9 +60,9 @@ else
 fi
 
 ### eliminar cuando se ajuste en el inverter.conf
-sed -i "s|^qpiri=.*|qpiri=104|" /opt/inverter-mqtt/inverter.conf
+sed -i "s|^qpiri=.*|qpiri=106|" /opt/inverter-mqtt/inverter.conf
 sed -i "s|^qpigs=.*|qpigs=110|" /opt/inverter-mqtt/inverter.conf
-sed -i "s|^qpiws=.*|qpiws=68|" /opt/inverter-mqtt/inverter.conf
+sed -i "s|^qpiws=.*|qpiws=36|" /opt/inverter-mqtt/inverter.conf
 ### eliminar cuando se ajuste en el inverter.conf
 
 # 5. EJECUCIÓN CON DIAGNÓSTICO
