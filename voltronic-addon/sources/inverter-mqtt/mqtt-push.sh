@@ -1,5 +1,5 @@
 #!/bin/bash
-INFLUX_ENABLED=`cat /etc/inverter/mqtt.json | jq '.influx.enabled' -r`
+INFLUX_ENABLED=`cat /etc/inverter-mqtt/mqtt.json | jq '.influx.enabled' -r`
 
 pushMQTTData () {
     # --- RUTA CORREGIDA ---
@@ -29,13 +29,13 @@ pushMQTTData () {
 }
 
 pushInfluxData () {
-    INFLUX_HOST=`cat /etc/inverter/mqtt.json | jq '.influx.host' -r`
-    INFLUX_USERNAME=`cat /etc/inverter/mqtt.json | jq '.influx.username' -r`
-    INFLUX_PASSWORD=`cat /etc/inverter/mqtt.json | jq '.influx.password' -r`
-    INFLUX_DEVICE=`cat /etc/inverter/mqtt.json | jq '.influx.device' -r`
-    INFLUX_PREFIX=`cat /etc/inverter/mqtt.json | jq '.influx.prefix' -r`
-    INFLUX_DATABASE=`cat /etc/inverter/mqtt.json | jq '.influx.database' -r`
-    INFLUX_MEASUREMENT_NAME=`cat /etc/inverter/mqtt.json | jq '.influx.namingMap.'$1'' -r`
+    INFLUX_HOST=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.host' -r`
+    INFLUX_USERNAME=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.username' -r`
+    INFLUX_PASSWORD=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.password' -r`
+    INFLUX_DEVICE=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.device' -r`
+    INFLUX_PREFIX=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.prefix' -r`
+    INFLUX_DATABASE=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.database' -r`
+    INFLUX_MEASUREMENT_NAME=`cat /etc/inverter-mqtt/mqtt.json" | jq '.influx.namingMap.'$1'' -r`
     
     curl -i -XPOST "$INFLUX_HOST/write?db=$INFLUX_DATABASE&precision=s" -u "$INFLUX_USERNAME:$INFLUX_PASSWORD" --data-binary "$INFLUX_PREFIX,device=$INFLUX_DEVICE $INFLUX_MEASUREMENT_NAME=$2"
 }
