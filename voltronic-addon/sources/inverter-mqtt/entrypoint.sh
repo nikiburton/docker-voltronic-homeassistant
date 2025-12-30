@@ -14,7 +14,7 @@ MQTT_PORT=$(jq -r '.mqtt_port' $CONFIG_PATH)
 DEVICE=$(jq -r '.device' $CONFIG_PATH)
 
 # Definir rutas fijas para evitar errores de "null directory"
-JSON_FILE="/etc/inverter/mqtt.json"
+JSON_FILE="/opt/inverter-mqtt/mqtt.json"
 SCRIPTS_DIR="/opt/inverter-mqtt"
 POLLER_BIN="/usr/bin/inverter_poller"
 
