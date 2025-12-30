@@ -47,10 +47,10 @@ echo "Preparando compatibilidad hiddev..."
 mkdir -p /dev/usb
 
 # Symlink principal esperado por Voltronic
-ln -sf "$DEVICE" /dev/usb/hiddev0
+ln -sf "$DEVICE" /dev/usb/hiddev0 || true
 
 # Symlink alternativo por si el binario busca /dev/hiddev0 directamente
-ln -sf "$DEVICE" /dev/hiddev0
+ln -sf "$DEVICE" /dev/hiddev0 || true
 
 # Comprobación final
 ls -l /dev/usb/hiddev0 /dev/hiddev0 /dev/hidraw0 || true
