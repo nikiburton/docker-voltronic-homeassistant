@@ -76,20 +76,19 @@ echo "Iniciando procesos..."
 
 # 2. El bucle que lee los datos y evita que el addon se detenga
 while true; do
-  echo "--- [LECTURA] Iniciando ciclo de datos ---"
+  echo "--- [LECTURA] Intentando ciclo completo ---"
   
-  # Paso 1: Solo pedimos QPIGS (Datos dinámicos)
-  # Usamos un comando filtrado para que el poller no intente leer todo de golpe
-  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0 -r QPIGS
-  sleep 2  # Pausa real de 2 segundos para vaciar el buffer USB
+  # Ejecutamos el poller normal (que lee todo según el .conf)
+  # Añadimos '|| true' para que NUNCA detenga el addon aunque falle la lectura
+  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0 || true
   
-  # Paso 2: Solo pedimos QPIRI (Configuración)
-  /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0 -r QPIRI
-  sleep 2  # Otra pausa
+  echo "--- [ENVÍO] Procesando datos MQTT ---"
+  /bin/bash ./mqtt-push.sh || true
   
-  # Paso 3: Ejecutamos el envío a MQTT
-  /bin/bash ./mqtt-push.sh
+  # Truco: "Reset" del puerto USB a nivel lógico antes de la siguiente vuelta
+  echo "Limpiando buffer..."
+  cat /dev/hidraw0 > /dev/null & sleep 1; kill $! 2>/dev/null || true
   
-  echo "--- [ESPERA] Ciclo completado, descansando 30s ---"
+  echo "--- [ESPERA] 30 segundos ---"
   sleep 30
 done
