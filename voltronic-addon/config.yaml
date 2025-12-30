@@ -20,6 +20,7 @@ privileged:
   - SYS_RAWIO
   - SYS_TIME
   - DAC_READ_SEARCH
+  - DAC_OVERRIDE  # Añade esta capacidad extra
 
 hardware: usb
 
