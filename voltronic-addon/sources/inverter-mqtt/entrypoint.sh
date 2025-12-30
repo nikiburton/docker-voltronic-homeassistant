@@ -80,6 +80,7 @@ while true; do
   
   # Ejecutamos el poller normal (que lee todo según el .conf)
   # Añadimos '|| true' para que NUNCA detenga el addon aunque falle la lectura
+  echo "BINARIO INVERTER VERSION 2025-12-30 HIDRAW FIX"
   /opt/inverter-cli/inverter_poller -d -p /dev/hidraw0 || true
   
   echo "--- [ENVÍO] Procesando datos MQTT ---"
