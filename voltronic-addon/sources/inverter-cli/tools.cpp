@@ -69,6 +69,5 @@ int print_help() {
     printf("                            PEj / PDj (Enable/disable power saving)\n");
     printf("                            PEu / PDu (Enable/disable overload restart)\n");
     printf("                            PEx / PDx (Enable/disable backlight)\n\n");
-
     return 1;
 }
