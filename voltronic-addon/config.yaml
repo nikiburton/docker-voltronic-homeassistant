@@ -1,6 +1,6 @@
 name: "Voltronic Inverter HAOS"
 description: "Addon para leer datos del inversor Voltronic con compatibilidad HAOS"
-version: "1.1.10"
+version: "1.1.11"
 slug: "voltronic_haos"
 arch:
   - aarch64
