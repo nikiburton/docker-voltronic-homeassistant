@@ -21,6 +21,7 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 echo "Usando dispositivo HID: $DEVICE"
 
 mount -o remount,rw /sys 2>/dev/null || true
+
 echo "--- [INICIO] LIBERACIÓN QUIRÚRGICA DE USB ---"
 # Extraemos el número de dispositivo hidraw (ej: de /dev/hidraw0 sacamos hidraw0)
 HID_NAME=$(basename "$DEVICE")
