@@ -4,6 +4,7 @@
 #define INPUTPARSER_H
 
 #include <vector>
+#include <string>
 
 class InputParser {
     std::vector <std::string> tokens;
