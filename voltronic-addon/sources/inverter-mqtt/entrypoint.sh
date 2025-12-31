@@ -80,15 +80,19 @@ sleep 2
 while true; do
   echo "--- [LECTURA] $(date) ---"
   
-  # Añadimos un echo justo antes de disparar el binario
-  echo "Llamando al binario poller con config: $CONF_FILE"
+  # 1. Intentamos limpiar el buffer por si hay basura
+  timeout 2s cat "$DEVICE" > /dev/null 2>&1 || true
   
-  # Ejecutamos con timeout de 20s para que no se congele el addon
-  timeout 20s $POLLER_BIN -d -c "$CONF_FILE" || echo "Error o Timeout en la comunicación"
+  # 2. Ejecutamos el poller con un timeout un poco más corto para no esperar tanto
+  # Pero añadimos la bandera -v (si el binario la soporta) o más debug
+  echo "Iniciando poller..."
+  timeout 15s $POLLER_BIN -d -c "$CONF_FILE"
   
-  echo "--- [ENVÍO MQTT] ---"
-  /bin/bash ./mqtt-push.sh || true
-  
+  if [ $? -eq 124 ]; then
+      echo "TIMEOUT: El inversor no respondió tras 15 segundos."
+      echo "RECOMENDACIÓN: El error de Read-only en unbind sigue bloqueando el puerto."
+  fi
+
   echo "--- [ESPERA] 30s ---"
   sleep 30
 done
