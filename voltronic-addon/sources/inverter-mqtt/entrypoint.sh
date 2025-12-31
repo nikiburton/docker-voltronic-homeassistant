@@ -1,16 +1,23 @@
 #!/bin/bash
 export TERM=xterm
 
+# Variables con valores por defecto
+DEVICE="${DEVICE:-/dev/hidraw0}"
+POLLER_BIN="${POLLER_BIN:-/usr/bin/inverter_poller}"
+CONF_FILE="${CONF_FILE:-/opt/inverter/inverter.conf}"
+
 echo "--- [DEBUG] ENTRYPOINT MODIFICADO PARA DEBUG ---"
 echo "--- LECTURA ÚNICA $(date) ---"
 
 # Verificación rápida de que el cable responde
-echo "Respuesta cruda del inversor:"
-timeout 3s cat "$DEVICE" | xxd | head -n 5
+if [ -e "$DEVICE" ]; then
+    echo "Respuesta cruda del inversor:"
+    timeout 3s cat "$DEVICE" | xxd | head -n 5
+else
+    echo "ERROR: Dispositivo $DEVICE no encontrado"
+fi
 
 echo "Ejecutando poller en modo debug (-d -1)..."
-# Ejecutamos poller en debug
-$POLLER_BIN -d -1 -c "$CONF_FILE"
+"$POLLER_BIN" -d -1 -c "$CONF_FILE"
 
 echo "--- FIN DE DEBUG ---"
-echo "Si todo funciona, recuerda restaurar el bucle infinito para HA."
