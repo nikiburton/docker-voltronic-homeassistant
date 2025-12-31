@@ -22,16 +22,23 @@ echo "Usando dispositivo HID: $DEVICE"
 
 mount -o remount,rw /sys 2>/dev/null || true
 
-echo "--- [INICIO] LIBERACIÓN QUIRÚRGICA DE USB ---"
-# Extraemos el número de dispositivo hidraw (ej: de /dev/hidraw0 sacamos hidraw0)
+echo "--- [INICIO] LIBERACIÓN QUIRÚRGICA CON TEE ---"
 HID_NAME=$(basename "$DEVICE")
 
-# Buscamos qué bus USB pertenece a ese hidraw específico
+# Buscamos el bus asociado
 for dev in /sys/class/hidraw/$HID_NAME/device/driver/*:*; do
     if [ -e "$dev" ]; then
         BUS_ID=$(basename "$dev")
-        echo "Liberando el bus $BUS_ID asociado a $DEVICE..."
-        echo "$BUS_ID" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: Ya estaba liberado o error de permisos."
+        echo "Intentando liberar el bus $BUS_ID asociado a $DEVICE..."
+        
+        # Usamos tee para forzar la escritura
+        echo "$BUS_ID" | tee /sys/bus/usb/drivers/usbhid/unbind > /dev/null
+        
+        if [ $? -eq 0 ]; then
+            echo "SUCESO: Bus $BUS_ID liberado correctamente."
+        else
+            echo "ERROR: tee no pudo escribir en unbind (permisos de sistema)."
+        fi
     fi
 done
 echo "--- [FIN] LIBERACIÓN COMPLETADA ---"
