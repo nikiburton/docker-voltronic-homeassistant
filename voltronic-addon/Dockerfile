@@ -30,8 +30,10 @@ ADD sources/inverter-mqtt/ /opt/inverter-mqtt/
 RUN chmod +x /opt/inverter-mqtt/*.sh
 
 # Compilar inverter_poller y moverlo a /usr/bin
+# Compilar inverter_poller y moverlo a /usr/bin
 RUN cd /opt/inverter-cli && \
-    mkdir -p bin && cmake . && make -j$(nproc) && cp bin/inverter_poller /usr/bin/inverter_poller
+    cmake . && make -j$(nproc) && \
+    cp inverter_poller /usr/bin/inverter_poller
 
 
 HEALTHCHECK \
