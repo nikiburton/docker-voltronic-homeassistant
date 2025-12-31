@@ -1,6 +1,6 @@
 #!/usr/bin/with-contenv bash
 # 1. ELIMINAR O COMENTAR set -e
-set -e  <-- ESTO ES LO QUE DETIENE EL ADDON. Mejor quitarlo.
+# set -e  <-- ESTO ES LO QUE DETIENE EL ADDON. Mejor quitarlo.
 
 echo "--- DETALLE DE DISPOSITIVOS USB ---"
 lsusb
