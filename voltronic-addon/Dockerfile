@@ -21,11 +21,18 @@ RUN apk add --no-cache \
         mosquitto-clients
 
 ADD sources/ /opt/
-RUN mkdir -p /etc/inverter
-ADD sources/inverter-cli/inverter.conf /etc/inverter/inverter.conf
+RUN mkdir -p /opt/inverter
 
+# Copiar archivos de configuración y scripts a las rutas esperadas
+ADD sources/inverter-cli/inverter.conf /opt/inverter/inverter.conf
+ADD sources/inverter-mqtt/mqtt.json /opt/inverter/mqtt.json
+ADD sources/inverter-mqtt/ /opt/inverter-mqtt/
+RUN chmod +x /opt/inverter-mqtt/*.sh
+
+# Compilar inverter_poller y moverlo a /usr/bin
 RUN cd /opt/inverter-cli && \
-    mkdir bin && cmake . && make -j$(nproc) && mv inverter_poller bin/
+    mkdir -p bin && cmake . && make -j$(nproc) && cp bin/inverter_poller /usr/bin/inverter_poller
+
 
 HEALTHCHECK \
     --interval=30s \
