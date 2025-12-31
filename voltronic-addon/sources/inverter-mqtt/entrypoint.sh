@@ -27,21 +27,17 @@ for dev in /sys/class/hidraw/$HID_NAME/device/driver/*:*; do
 done
 chmod 666 "$DEVICE" 2>/dev/null || true
 
-# 3. GENERACIÓN DE CONFIGURACIÓN (Sin CRC manual, dejando que el binario lo calcule)
-echo "--- [PASO 2] GENERANDO CONFIGURACIÓN LIMPIA ---"
+# --- GENERACIÓN CON RETORNO DE CARRO PERO SIN CRC ---
+echo "Generando configuración con retorno de carro..."
 printf "device=%s\n" "$DEVICE" > "$CONF_FILE"
 printf "run_interval=30\n" >> "$CONF_FILE"
 printf "timeout=5000\n" >> "$CONF_FILE"
-printf "amperage_factor=1.0\n" >> "$CONF_FILE"
-printf "watt_factor=1.01\n" >> "$CONF_FILE"
 
-# Comandos limpios. Si el binario es el correcto, él añadirá el CRC y el \r
-printf "qpiri_cmd=QPIRI\n" >> "$CONF_FILE"
+# Ponemos el comando seguido de \r (0x0D)
+printf "qpiri_cmd=QPIRI\r\n" >> "$CONF_FILE"
 printf "qpiri_reply_len=102\n" >> "$CONF_FILE"
-printf "qpigs_cmd=QPIGS\n" >> "$CONF_FILE"
+printf "qpigs_cmd=QPIGS\r\n" >> "$CONF_FILE"
 printf "qpigs_reply_len=110\n" >> "$CONF_FILE"
-printf "qmod_reply_len=5\n" >> "$CONF_FILE"
-printf "qpiws_reply_len=36\n" >> "$CONF_FILE"
 
 cp "$CONF_FILE" /etc/inverter.conf
 
