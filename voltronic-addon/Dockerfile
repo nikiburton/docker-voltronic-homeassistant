@@ -1,24 +1,37 @@
-FROM ghcr.io/home-assistant/aarch64-base:latest
+# Uncomment if building locally...
+# FROM debian:stretch
 
-# 1. Instalamos dependencias (jq es vital para leer tu configuración)
-RUN apk add --no-cache \
-    build-base \
-    cmake \
-    git \
-    mosquitto-clients \
-    bash \
-    jq \
-    strace
+FROM --platform=${TARGETPLATFORM:-linux/amd64} debian:stretch
 
-# 2. Copiamos los archivos de sources a /opt/
-# Primero copiamos SOLO la carpeta del poller y compilamos
-COPY sources/inverter-cli/ /opt/inverter-cli/
-RUN cd /opt/inverter-cli && cmake . && make -j$(nproc) && cp inverter_poller /usr/bin/
+ARG BUILD_DATE
+ARG VERSION
+ARG VCS_REF
+ARG TARGETPLATFORM
 
-# Después copiamos el resto de scripts (que es lo que más solemos cambiar)
-COPY sources/inverter-mqtt/ /opt/inverter-mqtt/
-RUN chmod +x /opt/inverter-mqtt/*.sh
+LABEL org.label-schema.build-date=$BUILD_DATE \
+  org.label-schema.version=$VERSION \
+  org.label-schema.vcs-ref=$VCS_REF
 
-# 5. Directorio de trabajo y arranque
-WORKDIR /opt/inverter-mqtt
+RUN apt update && apt install -y \
+        curl \
+        git \
+        build-essential \
+        cmake \
+        jq \
+        mosquitto-clients
+
+ADD sources/ /opt/
+ADD config/ /etc/inverter/
+
+RUN cd /opt/inverter-cli && \
+    mkdir bin && cmake . && make && mv inverter_poller bin/
+
+HEALTHCHECK \
+    --interval=30s \
+    --timeout=10s \
+    --start-period=1m \
+    --retries=3 \
+  CMD /opt/healthcheck
+
+WORKDIR /opt
 ENTRYPOINT ["/bin/bash", "/opt/inverter-mqtt/entrypoint.sh"]
