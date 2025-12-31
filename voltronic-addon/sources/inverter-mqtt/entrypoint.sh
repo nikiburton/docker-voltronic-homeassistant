@@ -27,23 +27,17 @@ for dev in /sys/class/hidraw/$HID_NAME/device/driver/*:*; do
 done
 chmod 666 "$DEVICE" 2>/dev/null || true
 
-# 3. GENERACIÓN DE INVERTER.CONF CON CRC (PROTOCOL P30)
-echo "--- [PASO 2] GENERANDO CONFIGURACIÓN CON CRC ---"
+# --- GENERACIÓN ULTRA-MINIMALISTA ---
+echo "Generando configuración mínima..."
 printf "device=%s\n" "$DEVICE" > "$CONF_FILE"
-printf "run_interval=30\n" >> "$CONF_FILE"
-printf "timeout=2000\n" >> "$CONF_FILE"
-printf "amperage_factor=1.0\n" >> "$CONF_FILE"
-printf "watt_factor=1.01\n" >> "$CONF_FILE"
-
-# Comandos con Checksum Hexadecimal y Retorno de Carro
+printf "run_interval=1\n" >> "$CONF_FILE"
+printf "timeout=5000\n" >> "$CONF_FILE"
 printf "qpiri_cmd=QPIRI\xF8\x54\r\n" >> "$CONF_FILE"
 printf "qpiri_reply_len=102\n" >> "$CONF_FILE"
 printf "qpigs_cmd=QPIGS\xB7\xA9\r\n" >> "$CONF_FILE"
 printf "qpigs_reply_len=110\n" >> "$CONF_FILE"
-printf "qmod_reply_len=5\n" >> "$CONF_FILE"
-printf "qpiws_reply_len=36\n" >> "$CONF_FILE"
 
-# Copia de respaldo para el binario
+# Forzamos que el binario lo vea en la ruta por defecto también
 cp "$CONF_FILE" /etc/inverter.conf
 
 # 4. CONFIGURACIÓN MQTT
@@ -67,7 +61,8 @@ while true; do
   echo "--- LECTURA $(date) ---"
   
   # Verificación rápida de que el cable responde
-  timeout 2s dd if="$DEVICE" bs=1 count=1 2>/dev/null | xxd && echo "USB OK" || echo "USB SILENCIOSO"
+  echo "Respuesta cruda del inversor:"
+  timeout 3s cat "$DEVICE" | xxd | head -n 5
 
   echo "Ejecutando poller..."
   # Ejecutamos con -v para ver qué pasa sin llenar el log de basura
