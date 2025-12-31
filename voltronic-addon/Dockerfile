@@ -12,10 +12,10 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
   org.label-schema.version=$VERSION \
   org.label-schema.vcs-ref=$VCS_REF
 
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
         curl \
         git \
-        build-essential \
+        build-base \
         cmake \
         jq \
         mosquitto-clients
