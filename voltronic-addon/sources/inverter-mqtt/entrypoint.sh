@@ -20,16 +20,18 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 
 echo "Usando dispositivo HID: $DEVICE"
 
-echo "--- [INICIO] LIBERACIÓN DE DISPOSITIVO USB ---"
-# Intentamos liberar CUALQUIER dispositivo HID para que el poller pueda acceder
-if [ -d /sys/bus/usb/drivers/usbhid ]; then
-    for dev in /sys/bus/usb/drivers/usbhid/*:*; do
-        if [ -e "$dev" ]; then
-            echo "Liberando dispositivo: $(basename $dev)"
-            echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || true
-        fi
-    done
-fi
+echo "--- [INICIO] LIBERACIÓN QUIRÚRGICA DE USB ---"
+# Extraemos el número de dispositivo hidraw (ej: de /dev/hidraw0 sacamos hidraw0)
+HID_NAME=$(basename "$DEVICE")
+
+# Buscamos qué bus USB pertenece a ese hidraw específico
+for dev in /sys/class/hidraw/$HID_NAME/device/driver/*:*; do
+    if [ -e "$dev" ]; then
+        BUS_ID=$(basename "$dev")
+        echo "Liberando el bus $BUS_ID asociado a $DEVICE..."
+        echo "$BUS_ID" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || echo "Aviso: Ya estaba liberado o error de permisos."
+    fi
+done
 echo "--- [FIN] LIBERACIÓN COMPLETADA ---"
 
 # 2. Comprobación del dispositivo
