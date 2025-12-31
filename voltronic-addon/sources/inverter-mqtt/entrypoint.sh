@@ -20,6 +20,18 @@ CONF_FILE="/opt/inverter-mqtt/inverter.conf"
 
 echo "Usando dispositivo HID: $DEVICE"
 
+echo "--- [INICIO] LIBERACIÓN DE DISPOSITIVO USB ---"
+# Intentamos liberar CUALQUIER dispositivo HID para que el poller pueda acceder
+if [ -d /sys/bus/usb/drivers/usbhid ]; then
+    for dev in /sys/bus/usb/drivers/usbhid/*:*; do
+        if [ -e "$dev" ]; then
+            echo "Liberando dispositivo: $(basename $dev)"
+            echo "$(basename $dev)" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || true
+        fi
+    done
+fi
+echo "--- [FIN] LIBERACIÓN COMPLETADA ---"
+
 # 2. Comprobación del dispositivo
 if [ ! -e "$DEVICE" ]; then
     echo "ERROR: Dispositivo $DEVICE no existe"
@@ -55,24 +67,17 @@ sleep 2
 
 # 5. EL BUCLE DEFINITIVO
 while true; do
-  echo "--- [1/3] INICIANDO COMUNICACIÓN ---"
-  date
+  echo "--- [LECTURA] $(date) ---"
   
-  # Usamos 'timeout' de Linux para que si el binario se cuelga, el script lo mate tras 15s
-  # Esto evita que el addon se quede "mudo"
-  if timeout 15s $POLLER_BIN -d -c "$CONF_FILE"; then
-      echo "--- [2/3] LECTURA EXITOSA ---"
-  else
-      echo "--- [2/3] ERROR: El poller tardó demasiado o falló (Timeout) ---"
-  fi
+  # Añadimos un echo justo antes de disparar el binario
+  echo "Llamando al binario poller con config: $CONF_FILE"
   
-  echo "--- [3/3] INTENTANDO MQTT PUSH ---"
-  if /bin/bash ./mqtt-push.sh; then
-      echo "Datos enviados a MQTT correctamente."
-  else
-      echo "Fallo al enviar a MQTT."
-  fi
+  # Ejecutamos con timeout de 20s para que no se congele el addon
+  timeout 20s $POLLER_BIN -d -c "$CONF_FILE" || echo "Error o Timeout en la comunicación"
   
-  echo "--- [ESPERA] Ciclo terminado. Durmiendo 30s ---"
+  echo "--- [ENVÍO MQTT] ---"
+  /bin/bash ./mqtt-push.sh || true
+  
+  echo "--- [ESPERA] 30s ---"
   sleep 30
 done
