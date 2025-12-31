@@ -2,13 +2,13 @@
 #
 # Simple script to register the MQTT topics when the container starts for the first time...
 
-MQTT_SERVER=`cat /etc/inverter/mqtt.json | jq '.server' -r`
-MQTT_PORT=`cat /etc/inverter/mqtt.json | jq '.port' -r`
-MQTT_TOPIC=`cat /etc/inverter/mqtt.json | jq '.topic' -r`
-MQTT_DEVICENAME=`cat /etc/inverter/mqtt.json | jq '.devicename' -r`
-MQTT_USERNAME=`cat /etc/inverter/mqtt.json | jq '.username' -r`
-MQTT_PASSWORD=`cat /etc/inverter/mqtt.json | jq '.password' -r`
-MQTT_CLIENTID=`cat /etc/inverter/mqtt.json | jq '.clientid' -r`
+MQTT_SERVER=`cat /opt/inverter/mqtt.json | jq '.server' -r`
+MQTT_PORT=`cat /opt/inverter/mqtt.json | jq '.port' -r`
+MQTT_TOPIC=`cat /opt/inverter/mqtt.json | jq '.topic' -r`
+MQTT_DEVICENAME=`cat /opt/inverter/mqtt.json | jq '.devicename' -r`
+MQTT_USERNAME=`cat /opt/inverter/mqtt.json | jq '.username' -r`
+MQTT_PASSWORD=`cat /opt/inverter/mqtt.json | jq '.password' -r`
+MQTT_CLIENTID=`cat /opt/inverter/mqtt.json | jq '.clientid' -r`
 
 registerTopic () {
     mosquitto_pub \
