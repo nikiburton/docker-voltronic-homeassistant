@@ -26,8 +26,8 @@ RUN mkdir -p /opt/inverter
 # Copiar archivos de configuración y scripts a las rutas esperadas
 ADD sources/inverter-cli/inverter.conf /opt/inverter/inverter.conf
 ADD sources/inverter-mqtt/mqtt.json /opt/inverter/mqtt.json
-ADD sources/inverter-mqtt/ /opt/inverter-mqtt/
-RUN chmod +x /opt/inverter-mqtt/*.sh
+ADD sources/inverter-mqtt/ /opt/inverter/
+RUN chmod +x /opt/inverter/*.sh
 
 # Compilar inverter_poller y moverlo a /usr/bin
 # Compilar inverter_poller y moverlo a /usr/bin
