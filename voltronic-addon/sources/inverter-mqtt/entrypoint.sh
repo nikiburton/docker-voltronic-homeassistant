@@ -79,21 +79,33 @@ sleep 2
 /bin/bash ./mqtt-subscriber.sh &
 
 # 5. EL BUCLE DEFINITIVO
+# ... (mantén todo lo anterior igual hasta llegar al bucle) ...
+
 while true; do
   echo "--- [LECTURA] $(date) ---"
   
-  # 1. Intentamos limpiar el buffer por si hay basura
-  timeout 2s cat "$DEVICE" > /dev/null 2>&1 || true
+  # PRUEBA DE VIDA DEL PUERTO
+  # Intentamos forzar permisos sobre el dispositivo directamente
+  chmod 666 "$DEVICE" 2>/dev/null || true
   
-  # 2. Ejecutamos el poller con un timeout un poco más corto para no esperar tanto
-  # Pero añadimos la bandera -v (si el binario la soporta) o más debug
-  echo "Iniciando poller..."
-  timeout 15s $POLLER_BIN -d -c "$CONF_FILE"
+  echo "Verificando si hay datos en el puerto..."
+  # Intentamos leer 1 solo byte. Si esto NO da timeout, el puerto está abierto.
+  timeout 3s dd if="$DEVICE" bs=1 count=1 2>/dev/null | xxd && echo "¡PUERTO VIVO!" || echo "Puerto bloqueado o sin datos."
+
+  echo "Ejecutando poller..."
+  # Usaremos el binario pero sin el flag -d (debug) para ver si cambia el comportamiento
+  # A veces el modo debug llena el buffer y lo bloquea
+  timeout 15s $POLLER_BIN -c "$CONF_FILE"
   
   if [ $? -eq 124 ]; then
-      echo "TIMEOUT: El inversor no respondió tras 15 segundos."
-      echo "RECOMENDACIÓN: El error de Read-only en unbind sigue bloqueando el puerto."
+    echo "Aviso: El poller ha agotado el tiempo. El driver del sistema sigue interfiriendo."
+    echo "Intentando 'limpieza' de emergencia..."
+    # Un pequeño truco: enviar un pulso nulo al dispositivo
+    echo -e "\n" > "$DEVICE" 2>/dev/null || true
   fi
+
+  echo "--- [ENVÍO MQTT] ---"
+  /bin/bash ./mqtt-push.sh || true
 
   echo "--- [ESPERA] 30s ---"
   sleep 30
