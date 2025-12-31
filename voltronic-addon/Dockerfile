@@ -1,7 +1,7 @@
 # Uncomment if building locally...
-# FROM debian:stretch
 
-FROM --platform=${TARGETPLATFORM:-linux/amd64} debian:stretch
+ARG BUILD_FROM
+FROM ${BUILD_FROM}
 
 ARG BUILD_DATE
 ARG VERSION
@@ -12,7 +12,7 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
   org.label-schema.version=$VERSION \
   org.label-schema.vcs-ref=$VCS_REF
 
-RUN apt update && apt install -y \
+RUN apt-get update && apt-get install -y \
         curl \
         git \
         build-essential \
