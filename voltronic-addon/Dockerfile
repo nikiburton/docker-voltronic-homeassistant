@@ -20,10 +20,10 @@ RUN apt update && apt install -y \
         jq \
         mosquitto-clients
 
-ADD sources/ /opt/
+ADD sources/ /etc/
 ADD config/ /etc/inverter/
 
-RUN cd /opt/inverter-cli && \
+RUN cd /etc/inverter-cli && \
     mkdir bin && cmake . && make && mv inverter_poller bin/
 
 HEALTHCHECK \
@@ -33,5 +33,5 @@ HEALTHCHECK \
     --retries=3 \
   CMD /opt/healthcheck
 
-WORKDIR /opt
+WORKDIR /etc
 ENTRYPOINT ["/bin/bash", "/opt/inverter-mqtt/entrypoint.sh"]
