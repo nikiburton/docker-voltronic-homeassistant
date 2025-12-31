@@ -25,7 +25,7 @@ RUN mkdir -p /etc/inverter
 ADD sources/inverter-cli/inverter.conf /etc/inverter/inverter.conf
 
 RUN cd /opt/inverter-cli && \
-    mkdir bin && cmake . && make && mv inverter_poller bin/
+    mkdir bin && cmake . && make -j$(nproc) && mv inverter_poller bin/
 
 HEALTHCHECK \
     --interval=30s \
