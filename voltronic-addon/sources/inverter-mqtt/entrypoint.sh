@@ -1,15 +1,80 @@
-#!/bin/bash
-export TERM=xterm
+#!/usr/bin/with-contenv bash
 
-# stty -F /dev/ttyUSB0 2400 raw
+echo "--- [INICIO] ARRANCANDO VOLTRONIC ADDO-ON ---"
 
-# Init the mqtt server for the first time, then every 5 minutes
-# This will re-create the auto-created topics in the MQTT server if HA is restarted...
+# 1. CARGA DE CONFIGURACIÓN
+CONFIG_PATH=/data/options.json
+MQTT_HOST=$(jq -r '.mqtt_host' $CONFIG_PATH)
+MQTT_USER=$(jq -r '.mqtt_user' $CONFIG_PATH)
+MQTT_PASS=$(jq -r '.mqtt_password' $CONFIG_PATH)
+MQTT_PORT=$(jq -r '.mqtt_port' $CONFIG_PATH)
+DEVICE=$(jq -r '.device' $CONFIG_PATH)
 
-watch -n 300 /opt/inverter-mqtt/mqtt-init.sh > /dev/null 2>&1 &
+JSON_FILE="/opt/inverter/mqtt.json"
+SCRIPTS_DIR="/opt/inverter"
+POLLER_BIN="/usr/bin/inverter_poller"
+CONF_FILE="/opt/inverter/inverter.conf"
 
-# Run the MQTT Subscriber process in the background (so that way we can change the configuration on the inverter from home assistant)
-/opt/inverter-mqtt/mqtt-subscriber.sh &
+# 2. LIBERACIÓN DEL DISPOSITIVO (Ignora si sale Read-only, el binario lo intentará igual)
+echo "--- [PASO 1] LIBERANDO HARDWARE ---"
+HID_NAME=$(basename "$DEVICE")
+for dev in /sys/class/hidraw/$HID_NAME/device/driver/*:*; do
+    if [ -e "$dev" ]; then
+        BUS_ID=$(basename "$dev")
+        echo "Liberando Bus ID: $BUS_ID"
+        echo "$BUS_ID" > /sys/bus/usb/drivers/usbhid/unbind 2>/dev/null || true
+    fi
+done
+chmod 666 "$DEVICE" 2>/dev/null || true
 
-# execute exactly every 30 seconds...
-watch -n 30 /opt/inverter-mqtt/mqtt-push.sh > /dev/null 2>&1
+# --- GENERACIÓN ULTRA-MINIMALISTA ---
+echo "Generando configuración mínima..."
+printf "device=%s\n" "$DEVICE" > "$CONF_FILE"
+printf "run_interval=1\n" >> "$CONF_FILE"
+printf "timeout=5000\n" >> "$CONF_FILE"
+printf "qpiri_cmd=QPIRI\xF8\x54\r\n" >> "$CONF_FILE"
+printf "qpiri_reply_len=102\n" >> "$CONF_FILE"
+printf "qpigs_cmd=QPIGS\xB7\xA9\r\n" >> "$CONF_FILE"
+printf "qpigs_reply_len=110\n" >> "$CONF_FILE"
+
+# Forzamos que el binario lo vea en la ruta por defecto también
+cp "$CONF_FILE" /etc/inverter.conf
+
+# 4. CONFIGURACIÓN MQTT
+echo "--- [PASO 3] CONFIGURANDO MQTT ---"
+sed -i "s@\"server\": \".*\"@\"server\": \"$MQTT_HOST\"@g" "$JSON_FILE"
+sed -i "s@\"port\": \".*\"@\"port\": \"$MQTT_PORT\"@g" "$JSON_FILE"
+sed -i "s@\"username\": \".*\"@\"username\": \"$MQTT_USER\"@g" "$JSON_FILE"
+sed -i "s@\"password\": \".*\"@\"password\": \"$MQTT_PASS\"@g" "$JSON_FILE"
+
+cd "$SCRIPTS_DIR"
+chmod +x "$POLLER_BIN"
+chmod +x ./*.sh
+
+echo "Iniciando servicios secundarios..."
+/bin/bash ./mqtt-init.sh &
+/bin/bash ./mqtt-subscriber.sh &
+
+# 5. BUCLE INFINITO DE LECTURA
+echo "--- [PASO 4] INICIANDO BUCLE DE LECTURA ---"
+while true; do
+  echo "--- LECTURA $(date) ---"
+  
+  # Verificación rápida de que el cable responde
+  echo "Respuesta cruda del inversor:"
+  timeout 3s cat "$DEVICE" | xxd | head -n 5
+
+  echo "Ejecutando poller..."
+  # Ejecutamos con -v para ver qué pasa sin llenar el log de basura
+  timeout 15s $POLLER_BIN -v -c "$CONF_FILE"
+  
+  if [ $? -eq 124 ]; then
+    echo "ERROR: El inversor no respondió al comando firmado (Timeout)."
+  fi
+
+  echo "Enviando a MQTT..."
+  /bin/bash ./mqtt-push.sh || true
+  
+  echo "Esperando 30 segundos..."
+  sleep 30
+done
