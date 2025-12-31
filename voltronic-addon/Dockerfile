@@ -21,7 +21,8 @@ RUN apt update && apt install -y \
         mosquitto-clients
 
 ADD sources/ /opt/
-ADD config/ /etc/inverter/
+RUN mkdir -p /etc/inverter
+ADD sources/inverter-cli/inverter.conf /etc/inverter/inverter.conf
 
 RUN cd /opt/inverter-cli && \
     mkdir bin && cmake . && make && mv inverter_poller bin/
