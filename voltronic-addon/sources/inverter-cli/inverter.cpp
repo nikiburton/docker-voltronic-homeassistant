@@ -73,7 +73,7 @@ bool cInverter::query(const char *cmd, int replysize) {
     int fd;
     int i=0, n;
 
-    fd = open(this->device.data(), O_RDWR);
+    fd = open(this->device.data(), O_RDWR | O_NONBLOCK);
     if (fd == -1) {
         lprintf("INVERTER: Unable to open device file (errno=%d %s)", errno, strerror(errno));
         sleep(5);
@@ -96,9 +96,6 @@ bool cInverter::query(const char *cmd, int replysize) {
     // settings.c_lflag = ICANON;         // canonical mode
     settings.c_oflag &= ~OPOST;        // raw output
 
-    settings.c_cc[VMIN]  = 0;
-    settings.c_cc[VTIME] = 20; // 2 segundos (20 x 100ms)
-
     tcsetattr(fd, TCSANOW, &settings); // apply the settings
     tcflush(fd, TCOFLUSH);
 
@@ -118,53 +115,44 @@ bool cInverter::query(const char *cmd, int replysize) {
     write(fd, &buf, n);
     time(&started);
 
-i = 0;
-memset(buf, 0, sizeof(buf));
-
-do {
-    n = read(fd, &buf[i], 1);
-
-    if (n > 0) {
-        if (buf[i] == 0x0d) { // CR = fin de mensaje Voltronic
-            i++;
-            break;
+    do {
+        n = read(fd, (void*)buf+i, replysize-i);
+        if (n < 0) {
+            if (time(NULL) - started > 2) {
+                lprintf("INVERTER: %s read timeout", cmd);
+                break;
+            } else {
+                usleep(10);
+                continue;
+            }
         }
-        i++;
-    } else {
-        if (time(NULL) - started > 2) {
-            lprintf("INVERTER: %s read timeout", cmd);
-            close(fd);
-            return false;
-        }
-        usleep(1000);
-    }
-} while (i < sizeof(buf) - 1);
 
+        i += n;
+    } while (i<replysize);
     close(fd);
 
- lprintf("INVERTER: %s reply size (%d bytes)", cmd, i);
+    if (i==replysize) {
 
-if (i < 5) {
-    lprintf("INVERTER: %s reply too short (%d bytes)", cmd, i);
-    return false;
-}
+        lprintf("INVERTER: %s reply size (%d bytes)", cmd, i);
 
-if (buf[0] != '(' || buf[i-1] != 0x0d) {
-    lprintf("INVERTER: %s: incorrect start/stop bytes. Buffer: %s", cmd, buf);
-    return false;
-}
+        if (buf[0]!='(' || buf[replysize-1]!=0x0d) {
+            lprintf("INVERTER: %s: incorrect start/stop bytes.  Buffer: %s", cmd, buf);
+            return false;
+        }
+        if (!(CheckCRC(buf, replysize))) {
+            lprintf("INVERTER: %s: CRC Failed!  Reply size: %d  Buffer: %s", cmd, replysize, buf);
+            return false;
+        }
 
-if (!CheckCRC(buf, i)) {
-    lprintf("INVERTER: %s: CRC Failed! Buffer: %s", cmd, buf);
-    return false;
-}
+        buf[i-3] = '\0'; //nullterminating on first CRC byte
+        lprintf("INVERTER: %s: %d bytes read: %s", cmd, i, buf);
 
-buf[i-3] = '\0';  // elimina CRC y CR
-lprintf("INVERTER: %s: %d bytes read: %s", cmd, i, buf);
-
-lprintf("INVERTER: %s query finished", cmd);
-return true;
-
+        lprintf("INVERTER: %s query finished", cmd);
+        return true;
+    } else {
+        lprintf("INVERTER: %s reply too short (%d bytes)", cmd, i);
+        return false;
+    }
 }
 
 void cInverter::poll() {
