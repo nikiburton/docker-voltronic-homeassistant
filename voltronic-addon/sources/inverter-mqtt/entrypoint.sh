@@ -73,6 +73,10 @@ fi
 chmod +x "$POLLER_BIN"
 chmod +x ./*.sh
 
+echo "--- [DEBUG] CONTENIDO DE INVERTER.CONF ---"
+cat -A "$CONF_FILE"
+echo "--- [DEBUG] FIN CONTENIDO ---"
+
 echo "Iniciando procesos de MQTT..."
 /bin/bash ./mqtt-init.sh &
 sleep 2
