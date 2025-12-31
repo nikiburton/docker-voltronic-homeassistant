@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <termios.h>
 
+#include <string>
+using std::string;
+
 cInverter::cInverter(std::string devicename, int qpiri, int qpiws, int qmod, int qpigs) {
     device = devicename;
     status1[0] = 0;
