@@ -1,6 +1,6 @@
 name: "Voltronic Inverter HAOS"
 description: "Addon para leer datos del inversor Voltronic con compatibilidad HAOS"
-version: "1.1.24"
+version: "1.1.25"
 slug: "voltronic_haos"
 arch:
   - aarch64
@@ -34,6 +34,7 @@ hardware: usb
 
 map:
   - config:rw
+  - device: /dev/hidraw0
 
 options:
   device: "/dev/hidraw0"
