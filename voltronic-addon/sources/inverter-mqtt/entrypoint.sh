@@ -2,6 +2,8 @@
 # 1. ELIMINAR O COMENTAR set -e
 # set -e  <-- ESTO ES LO QUE DETIENE EL ADDON. Mejor quitarlo.
 
+ls -l /sys/bus/usb/drivers/usbhid/unbind
+
 echo "--- DETALLE DE DISPOSITIVOS USB ---"
 lsusb
 echo "------------------------------------"
