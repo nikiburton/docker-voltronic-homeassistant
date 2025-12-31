@@ -18,6 +18,7 @@ else
 fi
 
 echo "Ejecutando poller en modo debug (-d -1)..."
-"$POLLER_BIN" -d -1 -c "$CONF_FILE"
+#"$POLLER_BIN" -d -1 -c "$CONF_FILE" # para ver buffers y offsets
+"$POLLER_BIN" -v -c "$CONF_FILE" # para ver los datos parseados
 
 echo "--- FIN DE DEBUG ---"
